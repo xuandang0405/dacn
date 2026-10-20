@@ -1,0 +1,156 @@
+[
+  {
+    "use_case": "UC01",
+    "goal": "Đăng ký tài khoản",
+    "module": "Tài khoản",
+    "diagram": "uc_module_1",
+    "sequence": "seq_01"
+  },
+  {
+    "use_case": "UC02",
+    "goal": "Đăng nhập và duy trì phiên",
+    "module": "Tài khoản",
+    "diagram": "uc_module_1",
+    "sequence": "seq_02"
+  },
+  {
+    "use_case": "UC03",
+    "goal": "Khôi phục quyền truy cập",
+    "module": "Tài khoản",
+    "diagram": "uc_module_1",
+    "sequence": "seq_04"
+  },
+  {
+    "use_case": "UC04",
+    "goal": "Đổi mật khẩu và thu hồi phiên",
+    "module": "Tài khoản",
+    "diagram": "uc_module_1",
+    "sequence": "seq_04"
+  },
+  {
+    "use_case": "UC05",
+    "goal": "Tạo không gian làm việc",
+    "module": "Workspace và dự án",
+    "diagram": "uc_module_2",
+    "sequence": "seq_05"
+  },
+  {
+    "use_case": "UC06",
+    "goal": "Mời người tham gia nhóm",
+    "module": "Workspace và dự án",
+    "diagram": "uc_module_2",
+    "sequence": "seq_06"
+  },
+  {
+    "use_case": "UC07",
+    "goal": "Chấp nhận hoặc từ chối lời mời",
+    "module": "Workspace và dự án",
+    "diagram": "uc_module_2",
+    "sequence": "seq_06"
+  },
+  {
+    "use_case": "UC08",
+    "goal": "Tổ chức dự án và quyền tham gia",
+    "module": "Workspace và dự án",
+    "diagram": "uc_module_2",
+    "sequence": "seq_05"
+  },
+  {
+    "use_case": "UC09",
+    "goal": "Lập công việc và phân công",
+    "module": "Công việc",
+    "diagram": "uc_module_3",
+    "sequence": "seq_07"
+  },
+  {
+    "use_case": "UC10",
+    "goal": "Cập nhật công việc và ước lượng",
+    "module": "Công việc",
+    "diagram": "uc_module_3",
+    "sequence": "seq_08"
+  },
+  {
+    "use_case": "UC11",
+    "goal": "Cập nhật tiến độ trên Kanban",
+    "module": "Công việc",
+    "diagram": "uc_module_3",
+    "sequence": "seq_09"
+  },
+  {
+    "use_case": "UC12",
+    "goal": "Theo dõi đầu việc con và thời gian",
+    "module": "Công việc",
+    "diagram": "uc_module_3",
+    "sequence": "seq_11"
+  },
+  {
+    "use_case": "UC13",
+    "goal": "Trao đổi và nhắc người phối hợp",
+    "module": "Cộng tác",
+    "diagram": "uc_module_4",
+    "sequence": "seq_12"
+  },
+  {
+    "use_case": "UC14",
+    "goal": "Theo dõi thông báo cá nhân",
+    "module": "Cộng tác",
+    "diagram": "uc_module_4",
+    "sequence": "seq_13"
+  },
+  {
+    "use_case": "UC15",
+    "goal": "Cung cấp tài liệu để AI hiểu dự án",
+    "module": "AI theo tài liệu",
+    "diagram": "uc_module_5",
+    "sequence": "seq_14"
+  },
+  {
+    "use_case": "UC16",
+    "goal": "Phân tích và hỏi về dự án",
+    "module": "AI theo tài liệu",
+    "diagram": "uc_module_5",
+    "sequence": "seq_15"
+  },
+  {
+    "use_case": "UC17",
+    "goal": "Lập kế hoạch công việc bằng AI",
+    "module": "AI theo tài liệu",
+    "diagram": "uc_module_5",
+    "sequence": "seq_16"
+  },
+  {
+    "use_case": "UC18",
+    "goal": "Duyệt kế hoạch và đưa vào Kanban",
+    "module": "AI theo tài liệu",
+    "diagram": "uc_module_5",
+    "sequence": "seq_17"
+  },
+  {
+    "use_case": "UC19",
+    "goal": "Quản lý năng lực của nhóm",
+    "module": "Năng lực và phân tích",
+    "diagram": "uc_module_6",
+    "sequence": "seq_18"
+  },
+  {
+    "use_case": "UC20",
+    "goal": "Đánh giá tải và độ chính xác ước lượng",
+    "module": "Năng lực và phân tích",
+    "diagram": "uc_module_6",
+    "sequence": "seq_19"
+  },
+  {
+    "use_case": "UC21",
+    "goal": "Xem lịch sử phối hợp",
+    "module": "Cộng tác",
+    "diagram": "uc_module_4",
+    "sequence": "seq_20"
+  },
+  {
+    "use_case": "UC22",
+    "goal": "Loại bỏ công việc khỏi dự án",
+    "module": "Công việc",
+    "diagram": "uc_module_3",
+    "sequence": "seq_10"
+  }
+]

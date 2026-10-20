@@ -1,0 +1,16 @@
+{
+  "date_local": "2026-10-21",
+  "scope": "Git index including nested DOCX package parts",
+  "files": 136,
+  "bytes": 3331564,
+  "provider_keys_found": 0,
+  "private_config_secrets_found": 0,
+  "excluded": [
+    "private .env files",
+    "user data",
+    "uploaded documents",
+    "build outputs",
+    "virtual environments"
+  ],
+  "external_key_revocation": "awaiting account owner confirmation"
+}

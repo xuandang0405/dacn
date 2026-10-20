@@ -1,0 +1,10 @@
+{
+  "checked_local_date": "2026-10-21",
+  "pull_request": "https://github.com/xuandang0405/dacn/pull/9",
+  "run": "https://github.com/xuandang0405/dacn/actions/runs/39466582238",
+  "backend_job_started": false,
+  "frontend_job_started": false,
+  "github_annotation": "The job was not started because your account is locked due to a billing issue.",
+  "ci_verified": false,
+  "action_required": "Repository account owner must resolve the GitHub billing/account restriction and rerun both jobs. Local Docker tests do not replace a successful CI run."
+}

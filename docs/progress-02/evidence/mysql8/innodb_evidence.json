@@ -1,0 +1,81 @@
+{
+  "date": "2026-10-20",
+  "database_version": "8.4.11",
+  "engine": "InnoDB",
+  "isolation": "REPEATABLE READ",
+  "accounts": 100,
+  "api_workers": 1,
+  "live_gemini": false,
+  "checks": [
+    {
+      "name": "independent_task_lock",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "seconds": 0.025898899000139863
+      }
+    },
+    {
+      "name": "independent_column_lock",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "seconds": 0.027505628999961118
+      }
+    },
+    {
+      "name": "same_task_lost_update",
+      "passed": true,
+      "detail": {
+        "statuses": [
+          409,
+          200
+        ]
+      }
+    },
+    {
+      "name": "opposite_moves_bounded",
+      "passed": true,
+      "detail": {
+        "statuses": [
+          409,
+          200
+        ],
+        "seconds": [
+          0.02664265900011742,
+          0.025769288999981654
+        ]
+      }
+    },
+    {
+      "name": "kanban_contiguous_positions",
+      "passed": true,
+      "detail": {
+        "sizes": {
+          "281": 20,
+          "282": 21,
+          "283": 18,
+          "284": 21,
+          "285": 20
+        }
+      }
+    },
+    {
+      "name": "immutable_estimate_trigger",
+      "passed": true,
+      "detail": {
+        "update_rejected": true
+      }
+    },
+    {
+      "name": "two_websocket_clients_after_commit",
+      "passed": true,
+      "detail": {
+        "events": [
+          "task.created",
+          "task.created"
+        ]
+      }
+    }
+  ]
+}

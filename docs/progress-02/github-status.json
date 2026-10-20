@@ -1,0 +1,26 @@
+{
+  "date_local": "2026-10-21",
+  "repository": "https://github.com/xuandang0405/dacn",
+  "public": true,
+  "initial_import_pr": "https://github.com/xuandang0405/dacn/pull/9",
+  "import_merged": false,
+  "feature_branch_base_commit": "49b6cd2b593735692ca1270bb0ce7bb65f2597bd",
+  "protected_branches": [
+    "main",
+    "develop"
+  ],
+  "required_approvals": 1,
+  "required_checks": [
+    "Backend MySQL 8",
+    "Frontend build"
+  ],
+  "ci_verified": false,
+  "ci_blocker": "GitHub account billing restriction prevents jobs starting",
+  "membership": {
+    "xuandang0405": "active",
+    "Pham-Minh-Duong": "invitation sent, acceptance pending",
+    "Dat": "owner will add later",
+    "Khoa": "owner will add later"
+  },
+  "history_note": "Automated initial import is not evidence of weekly individual contributions."
+}

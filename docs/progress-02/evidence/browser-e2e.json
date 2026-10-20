@@ -1,0 +1,262 @@
+{
+  "started_utc": "2026-10-20T17:38:46.481Z",
+  "real_ui": true,
+  "mocked_network": false,
+  "database": "Docker MySQL 8.4",
+  "checks": [
+    {
+      "name": "Two isolated browser sessions",
+      "passed": true,
+      "detail": "OWNER and MEMBER logged in through the real login form"
+    },
+    {
+      "name": "Create and realtime delivery",
+      "passed": true,
+      "detail": {
+        "task_id": 51,
+        "member_saw_without_reload": true
+      }
+    },
+    {
+      "name": "Member completes assigned task",
+      "passed": true,
+      "detail": {
+        "actual_hours": 5,
+        "owner_saw_done_without_reload": true
+      }
+    },
+    {
+      "name": "Reload and database persistence",
+      "passed": true,
+      "detail": {
+        "task_id": 51,
+        "version": 4
+      }
+    },
+    {
+      "name": "Real API error branches",
+      "passed": true,
+      "detail": [
+        400,
+        401,
+        403,
+        409,
+        422
+      ]
+    },
+    {
+      "name": "Project document upload through UI",
+      "passed": true,
+      "detail": "Private file storage and MySQL metadata; no paid Gemini request"
+    },
+    {
+      "name": "Database admin evidence",
+      "passed": true,
+      "detail": "Actual tables, migration revision and COUNT queries in Adminer"
+    }
+  ],
+  "websocket_events": [
+    {
+      "actor": "lan",
+      "event": "connected",
+      "received_utc": "2026-10-20T17:38:48.695Z"
+    },
+    {
+      "actor": "owner",
+      "event": "connected",
+      "received_utc": "2026-10-20T17:38:49.452Z"
+    },
+    {
+      "actor": "lan",
+      "event": "connected",
+      "received_utc": "2026-10-20T17:38:50.993Z"
+    },
+    {
+      "actor": "owner",
+      "event": "connected",
+      "received_utc": "2026-10-20T17:38:51.022Z"
+    },
+    {
+      "actor": "lan",
+      "event": "task.created",
+      "entity_id": 51,
+      "received_utc": "2026-10-20T17:38:51.172Z"
+    },
+    {
+      "actor": "owner",
+      "event": "task.created",
+      "entity_id": 51,
+      "received_utc": "2026-10-20T17:38:51.173Z"
+    },
+    {
+      "actor": "lan",
+      "event": "task.updated",
+      "entity_id": 51,
+      "received_utc": "2026-10-20T17:38:51.869Z"
+    },
+    {
+      "actor": "owner",
+      "event": "task.updated",
+      "entity_id": 51,
+      "received_utc": "2026-10-20T17:38:51.871Z"
+    },
+    {
+      "actor": "lan",
+      "event": "notification.created",
+      "received_utc": "2026-10-20T17:38:51.873Z"
+    },
+    {
+      "actor": "lan",
+      "event": "task.updated",
+      "entity_id": 51,
+      "received_utc": "2026-10-20T17:38:53.556Z"
+    },
+    {
+      "actor": "owner",
+      "event": "task.updated",
+      "entity_id": 51,
+      "received_utc": "2026-10-20T17:38:53.560Z"
+    },
+    {
+      "actor": "lan",
+      "event": "task.moved",
+      "entity_id": 51,
+      "received_utc": "2026-10-20T17:38:53.665Z"
+    },
+    {
+      "actor": "owner",
+      "event": "task.moved",
+      "entity_id": 51,
+      "received_utc": "2026-10-20T17:38:53.668Z"
+    },
+    {
+      "actor": "lan",
+      "event": "connected",
+      "received_utc": "2026-10-20T17:38:55.096Z"
+    },
+    {
+      "actor": "lan",
+      "event": "connected",
+      "received_utc": "2026-10-20T17:38:55.955Z"
+    }
+  ],
+  "api_samples": [
+    {
+      "operation": "Create task through UI",
+      "method": "POST",
+      "endpoint": "/api/v1/projects/1/tasks",
+      "status": 201,
+      "response": {
+        "id": 51,
+        "project_id": 1,
+        "column_id": 1,
+        "title": "Nghiệm thu vòng đời task 2026-10-20T17-38-51-111Z",
+        "description": "",
+        "priority": "MEDIUM",
+        "assignee_id": null,
+        "reporter_id": 1,
+        "estimated_hours": 0,
+        "actual_hours": 0,
+        "estimate_source": "HUMAN",
+        "start_date": null,
+        "due_date": null,
+        "position": 7,
+        "version": 1,
+        "created_at": "2026-10-20T17:38:51",
+        "updated_at": "2026-10-20T17:38:51"
+      }
+    },
+    {
+      "operation": "Read persisted task",
+      "method": "GET",
+      "endpoint": "/api/v1/tasks/51",
+      "status": 200,
+      "response": {
+        "id": 51,
+        "project_id": 1,
+        "column_id": 5,
+        "title": "Nghiệm thu vòng đời task 2026-10-20T17-38-51-111Z",
+        "description": "",
+        "priority": "MEDIUM",
+        "assignee_id": 3,
+        "reporter_id": 1,
+        "estimated_hours": 4,
+        "actual_hours": 5,
+        "estimate_source": "HUMAN",
+        "start_date": null,
+        "due_date": null,
+        "position": 6,
+        "version": 4,
+        "created_at": "2026-10-20T17:38:51",
+        "updated_at": "2026-10-20T17:38:54"
+      }
+    },
+    {
+      "operation": "Stale version",
+      "method": "PATCH",
+      "endpoint": "/api/v1/tasks/51",
+      "request": {
+        "version": 1,
+        "title": "Stale write"
+      },
+      "status": 409,
+      "response": {
+        "detail": "Task changed; reload before saving"
+      }
+    },
+    {
+      "operation": "Null required title",
+      "method": "PATCH",
+      "endpoint": "/api/v1/tasks/51",
+      "request": {
+        "version": 4,
+        "title": null
+      },
+      "status": 422,
+      "response": {
+        "detail": [
+          {
+            "type": "value_error",
+            "loc": [
+              "body",
+              "title"
+            ],
+            "msg": "Value error, This field cannot be null; omit it to keep the current value"
+          }
+        ]
+      }
+    },
+    {
+      "operation": "Invalid access token",
+      "method": "GET",
+      "endpoint": "/api/v1/auth/me",
+      "status": 401,
+      "response": {
+        "detail": "Invalid or expired token"
+      }
+    },
+    {
+      "operation": "Invalid invitation",
+      "method": "POST",
+      "endpoint": "/api/v1/invitations/respond",
+      "request": {
+        "token": "invalid",
+        "accept": true
+      },
+      "status": 400,
+      "response": {
+        "detail": "Invalid invitation token"
+      }
+    },
+    {
+      "operation": "MEMBER cannot edit skills",
+      "method": "POST",
+      "endpoint": "/api/v1/workspaces/1/skills",
+      "status": 403,
+      "response": {
+        "detail": "Insufficient workspace role"
+      }
+    }
+  ],
+  "finished_utc": "2026-10-20T17:39:06.879Z"
+}
