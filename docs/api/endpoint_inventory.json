@@ -1,0 +1,882 @@
+[
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/register",
+    "summary": "Register an account",
+    "operation_id": "register_api_v1_auth_register_post",
+    "security": [],
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "summary": "Sign in",
+    "operation_id": "login_api_v1_auth_login_post",
+    "security": [],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/refresh",
+    "summary": "Rotate refresh token",
+    "operation_id": "refresh_api_v1_auth_refresh_post",
+    "security": [],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/logout",
+    "summary": "Revoke refresh token",
+    "operation_id": "logout_api_v1_auth_logout_post",
+    "security": [],
+    "responses": [
+      "204",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/me",
+    "summary": "Current account",
+    "operation_id": "me_api_v1_auth_me_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/change-password",
+    "summary": "Change password and revoke sessions",
+    "operation_id": "change_password_api_v1_auth_change_password_post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "204",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/forgot-password",
+    "summary": "Email a password reset link",
+    "operation_id": "forgot_password_api_v1_auth_forgot_password_post",
+    "security": [],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/reset-password",
+    "summary": "Set a new password",
+    "operation_id": "reset_password_api_v1_auth_reset_password_post",
+    "security": [],
+    "responses": [
+      "204",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workspaces",
+    "summary": "My workspaces",
+    "operation_id": "list_workspaces_api_v1_workspaces_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workspaces",
+    "summary": "Create workspace",
+    "operation_id": "create_workspace_api_v1_workspaces_post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workspaces/{workspace_id}",
+    "summary": "Workspace detail",
+    "operation_id": "get_workspace_api_v1_workspaces__workspace_id__get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/workspaces/{workspace_id}",
+    "summary": "Update workspace",
+    "operation_id": "update_workspace_api_v1_workspaces__workspace_id__put",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/workspaces/{workspace_id}",
+    "summary": "Delete workspace",
+    "operation_id": "delete_workspace_api_v1_workspaces__workspace_id__delete",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "204",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workspaces/{workspace_id}/members",
+    "summary": "Workspace members",
+    "operation_id": "members_api_v1_workspaces__workspace_id__members_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workspaces/{workspace_id}/members",
+    "summary": "Send a pending workspace invitation",
+    "operation_id": "invite_api_v1_workspaces__workspace_id__members_post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/workspaces/{workspace_id}/members/{user_id}",
+    "summary": "Change member role",
+    "operation_id": "change_role_api_v1_workspaces__workspace_id__members__user_id__patch",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/workspaces/{workspace_id}/members/{user_id}",
+    "summary": "Remove member",
+    "operation_id": "remove_member_api_v1_workspaces__workspace_id__members__user_id__delete",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "204",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workspaces/{workspace_id}/projects",
+    "summary": "Accessible projects",
+    "operation_id": "list_projects_api_v1_workspaces__workspace_id__projects_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workspaces/{workspace_id}/projects",
+    "summary": "Create project",
+    "operation_id": "create_project_api_v1_workspaces__workspace_id__projects_post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/projects/{project_id}",
+    "summary": "Project detail",
+    "operation_id": "get_project_api_v1_projects__project_id__get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/projects/{project_id}",
+    "summary": "Update project",
+    "operation_id": "update_project_api_v1_projects__project_id__put",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/projects/{project_id}",
+    "summary": "Delete project",
+    "operation_id": "delete_project_api_v1_projects__project_id__delete",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "204",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/projects/{project_id}/members",
+    "summary": "Project member identifiers",
+    "operation_id": "project_members_api_v1_projects__project_id__members_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/projects/{project_id}/members/{user_id}",
+    "summary": "Add project member",
+    "operation_id": "add_project_member_api_v1_projects__project_id__members__user_id__post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/projects/{project_id}/members/{user_id}",
+    "summary": "Remove project member",
+    "operation_id": "remove_project_member_api_v1_projects__project_id__members__user_id__delete",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "204",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/projects/{project_id}/columns",
+    "summary": "Kanban columns",
+    "operation_id": "columns_api_v1_projects__project_id__columns_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/projects/{project_id}/columns",
+    "summary": "Create Kanban column",
+    "operation_id": "create_column_api_v1_projects__project_id__columns_post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/projects/{project_id}/tasks",
+    "summary": "Search and filter project tasks",
+    "operation_id": "list_tasks_api_v1_projects__project_id__tasks_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/projects/{project_id}/tasks",
+    "summary": "Create task",
+    "operation_id": "create_task_api_v1_projects__project_id__tasks_post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tasks/{task_id}",
+    "summary": "Task detail",
+    "operation_id": "get_task_api_v1_tasks__task_id__get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/tasks/{task_id}",
+    "summary": "Update task with version check",
+    "operation_id": "update_task_api_v1_tasks__task_id__patch",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/tasks/{task_id}",
+    "summary": "Delete task",
+    "operation_id": "delete_task_api_v1_tasks__task_id__delete",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "204",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tasks/{task_id}/required-skills",
+    "summary": "Skills required by this task",
+    "operation_id": "required_skills_api_v1_tasks__task_id__required_skills_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/tasks/{task_id}/move",
+    "summary": "Move task atomically",
+    "operation_id": "move_task_api_v1_tasks__task_id__move_post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tasks/{task_id}/activity",
+    "summary": "Task activity history",
+    "operation_id": "task_activity_api_v1_tasks__task_id__activity_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tasks/{task_id}/subtasks",
+    "summary": "Task subtasks",
+    "operation_id": "subtasks_api_v1_tasks__task_id__subtasks_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/tasks/{task_id}/subtasks",
+    "summary": "Create subtask",
+    "operation_id": "create_subtask_api_v1_tasks__task_id__subtasks_post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/subtasks/{subtask_id}",
+    "summary": "Update subtask",
+    "operation_id": "update_subtask_api_v1_subtasks__subtask_id__put",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/subtasks/{subtask_id}",
+    "summary": "Delete subtask",
+    "operation_id": "delete_subtask_api_v1_subtasks__subtask_id__delete",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "204",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tasks/{task_id}/comments",
+    "summary": "Task comments",
+    "operation_id": "comments_api_v1_tasks__task_id__comments_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/tasks/{task_id}/comments",
+    "summary": "Comment and notify mentions",
+    "operation_id": "create_comment_api_v1_tasks__task_id__comments_post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications",
+    "summary": "My notifications",
+    "operation_id": "notifications_api_v1_notifications_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications/unread-count",
+    "summary": "Unread notification count",
+    "operation_id": "unread_count_api_v1_notifications_unread_count_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/notifications/{notification_id}/read",
+    "summary": "Mark notification read",
+    "operation_id": "mark_read_api_v1_notifications__notification_id__read_post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "204",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/notifications/read-all",
+    "summary": "Mark all notifications read",
+    "operation_id": "read_all_api_v1_notifications_read_all_post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "204"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workspaces/{workspace_id}/skills",
+    "summary": "Skill matrix",
+    "operation_id": "skills_api_v1_workspaces__workspace_id__skills_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workspaces/{workspace_id}/skills",
+    "summary": "Add skill",
+    "operation_id": "add_skill_api_v1_workspaces__workspace_id__skills_post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/skills/{skill_id}/members",
+    "summary": "Set member skill level",
+    "operation_id": "set_skill_level_api_v1_skills__skill_id__members_put",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workspaces/{workspace_id}/workload",
+    "summary": "Member workload",
+    "operation_id": "get_workload_api_v1_workspaces__workspace_id__workload_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/projects/{project_id}/analytics",
+    "summary": "Project analytics and MAPE",
+    "operation_id": "analytics_api_v1_projects__project_id__analytics_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workspaces/{workspace_id}/dashboard",
+    "summary": "Workspace dashboard",
+    "operation_id": "dashboard_api_v1_workspaces__workspace_id__dashboard_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ai/projects/{project_id}/documents",
+    "summary": "Project documents available to AI",
+    "operation_id": "list_documents_api_v1_ai_projects__project_id__documents_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/ai/projects/{project_id}/documents",
+    "summary": "Upload a project document",
+    "operation_id": "upload_document_api_v1_ai_projects__project_id__documents_post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/ai/documents/{document_id}",
+    "summary": "Remove a project document",
+    "operation_id": "delete_document_api_v1_ai_documents__document_id__delete",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "204",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/ai/projects/{project_id}/query",
+    "summary": "Analyze or ask about uploaded project documents",
+    "operation_id": "query_project_api_v1_ai_projects__project_id__query_post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/ai/decompose-task",
+    "summary": "Generate a plan for review",
+    "operation_id": "decompose_task_api_v1_ai_decompose_task_post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ai/projects/{project_id}/suggest-members",
+    "summary": "Suggest eligible members for task skills",
+    "operation_id": "suggest_members_api_v1_ai_projects__project_id__suggest_members_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/ai/requests/{request_id}/confirm",
+    "summary": "Save reviewed AI plan",
+    "operation_id": "confirm_plan_api_v1_ai_requests__request_id__confirm_post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/invitations",
+    "summary": "My pending workspace invitations",
+    "operation_id": "inbox_api_v1_invitations_get",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/invitations/respond",
+    "summary": "Accept or decline a workspace invitation",
+    "operation_id": "answer_api_v1_invitations_respond_post",
+    "security": [
+      {
+        "HTTPBearer": []
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/health",
+    "summary": "Database health",
+    "operation_id": "health_health_get",
+    "security": [],
+    "responses": [
+      "200"
+    ]
+  }
+]

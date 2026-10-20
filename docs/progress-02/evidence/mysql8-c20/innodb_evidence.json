@@ -1,0 +1,136 @@
+{
+  "date": "2026-10-20",
+  "database_version": "8.4.11",
+  "engine": "InnoDB",
+  "isolation": "REPEATABLE READ",
+  "accounts": 100,
+  "concurrent_accounts": 20,
+  "api_workers": 1,
+  "live_gemini": false,
+  "checks": [
+    {
+      "name": "independent_task_lock",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "seconds": 0.027507692999961364
+      }
+    },
+    {
+      "name": "independent_column_lock",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "seconds": 0.03599983799995243
+      }
+    },
+    {
+      "name": "same_task_lost_update",
+      "passed": true,
+      "detail": {
+        "statuses": [
+          409,
+          200
+        ]
+      }
+    },
+    {
+      "name": "opposite_moves_bounded",
+      "passed": true,
+      "detail": {
+        "statuses": [
+          409,
+          200
+        ],
+        "seconds": [
+          0.03152199699979974,
+          0.03160690400000021
+        ]
+      }
+    },
+    {
+      "name": "kanban_contiguous_positions",
+      "passed": true,
+      "detail": {
+        "sizes": {
+          "281": 20,
+          "282": 21,
+          "283": 18,
+          "284": 21,
+          "285": 20
+        }
+      }
+    },
+    {
+      "name": "immutable_estimate_trigger",
+      "passed": true,
+      "detail": {
+        "update_rejected": true
+      }
+    },
+    {
+      "name": "two_websocket_clients_after_commit",
+      "passed": true,
+      "detail": {
+        "events": [
+          "task.created",
+          "task.created"
+        ]
+      }
+    },
+    {
+      "name": "load_list",
+      "passed": true,
+      "detail": {
+        "workload": "list",
+        "requests": 500,
+        "concurrent_accounts": 20,
+        "rounds": 5,
+        "p50_ms": 156.67,
+        "p95_ms": 214.45,
+        "max_ms": 235.56,
+        "http_errors": 0,
+        "wall_seconds_including_version_reads": 5.31
+      }
+    },
+    {
+      "name": "load_update",
+      "passed": true,
+      "detail": {
+        "workload": "update",
+        "requests": 500,
+        "concurrent_accounts": 20,
+        "rounds": 5,
+        "p50_ms": 120.53,
+        "p95_ms": 153.14,
+        "max_ms": 184.87,
+        "http_errors": 0,
+        "wall_seconds_including_version_reads": 6.26
+      }
+    }
+  ],
+  "load": [
+    {
+      "workload": "list",
+      "requests": 500,
+      "concurrent_accounts": 20,
+      "rounds": 5,
+      "p50_ms": 156.67,
+      "p95_ms": 214.45,
+      "max_ms": 235.56,
+      "http_errors": 0,
+      "wall_seconds_including_version_reads": 5.31
+    },
+    {
+      "workload": "update",
+      "requests": 500,
+      "concurrent_accounts": 20,
+      "rounds": 5,
+      "p50_ms": 120.53,
+      "p95_ms": 153.14,
+      "max_ms": 184.87,
+      "http_errors": 0,
+      "wall_seconds_including_version_reads": 6.26
+    }
+  ]
+}

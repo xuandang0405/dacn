@@ -1,0 +1,15 @@
+{
+  "observed_local_date": "2026-10-21",
+  "database_version": "8.4.11",
+  "api_workers": 1,
+  "accounts": 100,
+  "concurrent_requests": 100,
+  "planned_requests": {"GET": 500, "PATCH": 500},
+  "full_load_completed": false,
+  "failure": "httpx.ReadTimeout during concurrent GET workload",
+  "client_timeout_seconds": 20,
+  "p95_ms": null,
+  "interpretation": "100-concurrent target not accepted. Partial locking/WebSocket checks are in innodb_evidence.json; the 76-test JUnit result is separate from this failed load run.",
+  "reproduce": "LOAD_CONCURRENCY=100 python tests/run_verification.py --output-dir <new-evidence-directory>",
+  "issue": "https://github.com/xuandang0405/dacn/issues/5"
+}

@@ -1,0 +1,24 @@
+name: Công việc tiến độ 02
+description: Phân công một kết quả có thể kiểm tra
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Kết quả cần bàn giao
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Điều kiện nghiệm thu
+      description: Ghi API, màn hình, dữ liệu hoặc kết quả kiểm thử cần có.
+    validations:
+      required: true
+  - type: input
+    id: deadline
+    attributes:
+      label: Hạn hoàn thành
+  - type: textarea
+    id: verification
+    attributes:
+      label: Cách kiểm tra và bằng chứng
