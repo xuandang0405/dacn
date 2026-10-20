@@ -1,5 +1,7 @@
 # Tái lập kết quả kiểm thử
 
+Bằng chứng bên dưới là mốc lịch sử ngày 13/10. Kết quả mới trên MySQL 8, hồi quy 76 test và lỗi tải 100 đồng thời nằm tại [progress-02/evidence](../progress-02/evidence); xem README gốc và báo cáo tiến độ lần 2 để đối chiếu hiện trạng. Không dùng bản lịch sử này thay kết quả mới.
+
 Ngày chốt: 13/10/2026. Cơ sở dữ liệu đã chạy: MariaDB 10.4.32/InnoDB, REPEATABLE READ, một API worker. MySQL 8 là stack đích chưa được nghiệm thu.
 
 ## Chuẩn bị

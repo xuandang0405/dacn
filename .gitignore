@@ -29,3 +29,7 @@ test-results/
 ~$*.docx
 docs/progress-02/evidence/browser-failure.json
 docs/progress-02/evidence/screenshots/debug-*.png
+*.tsbuildinfo
+**/.env
+**/.env.*
+!**/.env.example

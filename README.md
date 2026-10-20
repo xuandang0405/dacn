@@ -2,6 +2,8 @@
 
 Đồ án quản lý công việc nhóm của Nhóm 3C: workspace, JWT/RBAC, Kanban realtime, skill matrix, workload và trợ lý Gemini dựa trên tài liệu Project. Giao diện VI/EN. Bản tiến độ lần 2 chốt ngày 21/10/2026 (UTC+7).
 
+[Báo cáo tiến độ lần 2](docs/262701-DACN-01-Nhom3C-BC-02.docx) gồm hiện thực hóa, ảnh chức năng thật, kết quả kiểm thử, phân công và kế hoạch demo.
+
 ## Kiến trúc đã triển khai
 
 ```mermaid
@@ -117,6 +119,8 @@ Kết quả ngày 21/10: MySQL 8.4 đạt 76/76 test và các kiểm tra khóa, 
 Browser E2E: cài Playwright trong môi trường kiểm thử riêng, rồi chạy `node scripts/capture_progress_evidence.cjs` khi Docker/seed sẵn sàng. Có thể đặt EVIDENCE_CHROME cho browser cài sẵn. Runner đăng nhập hai vai trò, thao tác task thật, thêm task demo mỗi lần chạy; không mock API, không gọi Gemini trả phí.
 
 Frontend: `npm ci`, `npx tsc --noEmit`, `npm run build`. CI chạy MySQL 8 và frontend build trên PR vào develop/main.
+
+GitHub Actions hiện chưa khởi chạy job vì GitHub báo tài khoản bị khóa do vấn đề thanh toán. Cần chủ tài khoản xử lý rồi chạy lại; chưa có CI Pass. [PR #9](https://github.com/xuandang0405/dacn/pull/9) chứa bản nhập mã để review, chưa merge; khi lấy mã ở thời điểm này hãy chọn nhánh `codex/progress-02`. main/develop mới có commit khởi tạo.
 
 ## Những phần còn mở
 

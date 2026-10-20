@@ -14,8 +14,10 @@ const evidence = { started_utc: new Date().toISOString(), real_ui: true, mocked_
   database: 'Docker MySQL 8.4', checks: [], websocket_events: [], api_samples: [] };
 function check(name, detail) { evidence.checks.push({ name, passed: true, detail }); }
 async function shot(page, name) {
+  await page.locator('.skeleton-stack').waitFor({ state: 'hidden' });
+  await page.waitForTimeout(1200); // Let finite entrance animations finish before capture.
   await page.evaluate(() => { window.scrollTo(0, 0); document.querySelector('.drawer')?.scrollTo(0, 0); });
-  await page.screenshot({ path: path.join(SHOTS, name + '.png') });
+  await page.screenshot({ path: path.join(SHOTS, name + '.png'), fullPage: name === '11-database-tables' });
 }
 async function login(page, email) {
   page.on('websocket', socket => socket.on('framereceived', frame => {
@@ -57,8 +59,8 @@ async function main() {
   const browser = await chromium.launch({ headless: true,
     ...(process.env.EVIDENCE_CHROME ? { executablePath: process.env.EVIDENCE_CHROME } : {}) });
   try {
-    const ownerContext = await browser.newContext({ viewport: { width: 1600, height: 1050 } });
-    const memberContext = await browser.newContext({ viewport: { width: 1600, height: 1050 } });
+    const ownerContext = await browser.newContext({ viewport: { width: 1920, height: 1000 } });
+    const memberContext = await browser.newContext({ viewport: { width: 1920, height: 1000 } });
     const owner = await ownerContext.newPage(), member = await memberContext.newPage();
     await owner.goto(uiURL); await owner.getByLabel('Email', { exact: true }).waitFor();
     await shot(owner, '01-login');
@@ -103,6 +105,7 @@ async function main() {
     assert.equal((await movedPromise).status(), 200);
     await owner.locator('.kanban-column').filter({ has: owner.locator('.column-head strong', { hasText: 'DONE' }) }).getByRole('heading', { name: title, exact: true }).waitFor();
     check('Member completes assigned task', { actual_hours: 5, owner_saw_done_without_reload: true });
+    await owner.getByPlaceholder('Tìm kiếm công việc...').fill(title);
     await shot(owner, '04-kanban-realtime');
     await member.reload(); await board(member);
     await member.locator('.kanban-column').filter({ has: member.locator('.column-head strong', { hasText: 'DONE' }) }).getByRole('heading', { name: title, exact: true }).waitFor();
@@ -157,7 +160,7 @@ async function main() {
     await block.locator('.opblock-summary').click(); await block.scrollIntoViewIfNeeded();
     await swagger.screenshot({ path: path.join(SHOTS, '10-swagger.png') });
     const dbEnv = Object.fromEntries(fs.readFileSync(path.join(ROOT, '.env'), 'utf8').split(/\r?\n/).filter(x => x.includes('=')).map(x => { const i = x.indexOf('='); return [x.slice(0, i), x.slice(i + 1)]; }));
-    const admin = await ownerContext.newPage(); await admin.goto('http://localhost:8081');
+    const admin = await ownerContext.newPage(); await admin.setViewportSize({ width: 1300, height: 800 }); await admin.goto('http://localhost:8081');
     await admin.locator('input[name="auth[username]"]').fill(dbEnv.MYSQL_USER || 'smart_task');
     await admin.locator('input[name="auth[password]"]').fill(dbEnv.MYSQL_PASSWORD);
     await admin.locator('input[name="auth[db]"]').fill(dbEnv.MYSQL_DATABASE || 'smart_task_manager');
@@ -166,8 +169,8 @@ async function main() {
     await shot(admin, '11-database-tables');
     const queryURL = new URL(admin.url()); queryURL.searchParams.set('sql', '');
     await admin.goto(queryURL.toString());
-    await admin.locator('textarea[name=query]').fill("SELECT 'users' AS entity, COUNT(*) AS records FROM users UNION ALL SELECT 'workspaces',COUNT(*) FROM workspaces UNION ALL SELECT 'skills',COUNT(*) FROM skills UNION ALL SELECT 'projects',COUNT(*) FROM projects UNION ALL SELECT 'tasks',COUNT(*) FROM tasks UNION ALL SELECT 'task_estimate_versions',COUNT(*) FROM task_estimate_versions; SELECT * FROM alembic_version;");
-    await admin.locator('input[name=execute]').click();
+    await admin.locator('pre[contenteditable=true]').fill("SELECT 'users' AS entity, COUNT(*) AS records FROM users UNION ALL SELECT 'workspaces',COUNT(*) FROM workspaces UNION ALL SELECT 'skills',COUNT(*) FROM skills UNION ALL SELECT 'projects',COUNT(*) FROM projects UNION ALL SELECT 'tasks',COUNT(*) FROM tasks UNION ALL SELECT 'task_estimate_versions',COUNT(*) FROM task_estimate_versions; SELECT * FROM alembic_version;");
+    await admin.getByRole('button', { name: 'Execute', exact: true }).click();
     await admin.getByText('0005', { exact: true }).waitFor();
     await shot(admin, '12-database-counts');
     check('Database admin evidence', 'Actual tables, migration revision and COUNT queries in Adminer');
