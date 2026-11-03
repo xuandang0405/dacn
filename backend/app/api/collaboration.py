@@ -1,5 +1,5 @@
 import re
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.api.tasks import task_access
@@ -23,17 +23,20 @@ def subtasks(task_id: int, user: User = Depends(current_user), db: Session = Dep
     return db.scalars(select(Subtask).where(Subtask.task_id == task_id).order_by(Subtask.id)).all()
 
 @router.post("/tasks/{task_id}/subtasks", response_model=SubtaskOut, status_code=201, summary="Create subtask")
-def create_subtask(task_id: int, data: SubtaskIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def create_subtask(task_id: int, data: SubtaskIn, background_tasks: BackgroundTasks, user: User = Depends(current_user), db: Session = Depends(get_db)):
     _, project = task_access(db, task_id, user)
     validate_assignee(db, project, data.assignee_id)
     row = Subtask(task_id=task_id, **data.model_dump())
     db.add(row)
     db.commit()
     db.refresh(row)
-    return row
+    result = SubtaskOut.model_validate(row)
+    background_tasks.add_task(hub.publish, project.id, "subtask.created", project.workspace_id, row.id, user.id, result.model_dump(mode="json"))
+    db.rollback()
+    return result
 
 @router.put("/subtasks/{subtask_id}", response_model=SubtaskOut, summary="Update subtask")
-def update_subtask(subtask_id: int, data: SubtaskIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def update_subtask(subtask_id: int, data: SubtaskIn, background_tasks: BackgroundTasks, user: User = Depends(current_user), db: Session = Depends(get_db)):
     row = db.get(Subtask, subtask_id)
     if not row:
         raise HTTPException(404, "Subtask not found")
@@ -42,16 +45,22 @@ def update_subtask(subtask_id: int, data: SubtaskIn, user: User = Depends(curren
     for key, value in data.model_dump().items():
         setattr(row, key, value)
     db.commit()
-    return row
+    result = SubtaskOut.model_validate(row)
+    background_tasks.add_task(hub.publish, project.id, "subtask.updated", project.workspace_id, row.id, user.id, result.model_dump(mode="json"))
+    db.rollback()
+    return result
 
 @router.delete("/subtasks/{subtask_id}", status_code=204, summary="Delete subtask")
-def delete_subtask(subtask_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def delete_subtask(subtask_id: int, background_tasks: BackgroundTasks, user: User = Depends(current_user), db: Session = Depends(get_db)):
     row = db.get(Subtask, subtask_id)
     if not row:
         raise HTTPException(404, "Subtask not found")
-    task_access(db, row.task_id, user)
+    _, project = task_access(db, row.task_id, user)
+    task_id = row.task_id
     db.delete(row)
     db.commit()
+    background_tasks.add_task(hub.publish, project.id, "subtask.deleted", project.workspace_id, subtask_id, user.id, {"task_id": task_id})
+    db.rollback()
 
 @router.get("/tasks/{task_id}/comments", response_model=list[CommentOut], summary="Task comments")
 def comments(task_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
@@ -59,7 +68,7 @@ def comments(task_id: int, user: User = Depends(current_user), db: Session = Dep
     return db.scalars(select(Comment).where(Comment.task_id == task_id).order_by(Comment.created_at)).all()
 
 @router.post("/tasks/{task_id}/comments", response_model=CommentOut, status_code=201, summary="Comment and notify mentions")
-async def create_comment(task_id: int, data: CommentIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def create_comment(task_id: int, data: CommentIn, background_tasks: BackgroundTasks, user: User = Depends(current_user), db: Session = Depends(get_db)):
     _, project = task_access(db, task_id, user)
     comment = Comment(task_id=task_id, author_id=user.id, content=data.content.strip())
     db.add(comment)
@@ -82,10 +91,12 @@ async def create_comment(task_id: int, data: CommentIn, user: User = Depends(cur
     db.add(Activity(project_id=project.id, actor_id=user.id, action="comment.created", entity="comment", entity_id=comment.id))
     db.commit()
     db.refresh(comment)
-    await hub.publish(project.id, "comment.created", project.workspace_id, comment.id, user.id, CommentOut.model_validate(comment).model_dump(mode="json"))
+    result = CommentOut.model_validate(comment)
+    background_tasks.add_task(hub.publish, project.id, "comment.created", project.workspace_id, comment.id, user.id, result.model_dump(mode="json"))
     for mentioned_id in mentioned_ids:
-        await hub.publish_user(mentioned_id, "notification.created", {"kind": "mention", "task_id": task_id})
-    return comment
+        background_tasks.add_task(hub.publish_user, mentioned_id, "notification.created", {"kind": "mention", "task_id": task_id})
+    db.rollback()
+    return result
 
 @router.get("/notifications", summary="My notifications")
 def notifications(user: User = Depends(current_user), db: Session = Depends(get_db)):

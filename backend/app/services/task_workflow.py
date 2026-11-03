@@ -5,7 +5,7 @@ from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models import Activity, KanbanColumn, Notification, Project, Task, TaskRequirement, User
-from app.schemas import TaskIn, TaskMove, TaskOut, TaskPatch
+from app.schemas import ProjectOut, TaskIn, TaskMove, TaskOut, TaskPatch
 from app.security import current_user, project_access, validate_assignee
 from app.services.task_transactions import lock_columns, lock_task, siblings, reorder, snapshot
 
@@ -19,6 +19,14 @@ def task_access(db: Session, task_id: int, user: User) -> tuple[Task, Project]:
 
 def event_activity(db: Session, project: Project, actor: User, action: str, task_id: int, detail: dict | None = None):
     db.add(Activity(project_id=project.id, actor_id=actor.id, action=action, entity="task", entity_id=task_id, detail=detail or {}))
+
+
+def event_result(db: Session, task: Task, project: Project):
+    # Copy response fields in the DB worker, then return its read connection
+    # before asynchronous WebSocket authorization opens independent sessions.
+    result = TaskOut.model_validate(task), ProjectOut.model_validate(project)
+    db.rollback()
+    return result
 
 
 def reload_after_lock(db: Session, task_id: int) -> Task:
@@ -70,7 +78,7 @@ def create_task(project_id: int, data: TaskIn, user: User = Depends(current_user
         db.add(Notification(user_id=task.assignee_id, workspace_id=p.workspace_id, kind="task_assigned", message=f"Assigned: {task.title}", entity_id=task.id))
     db.commit()
     db.refresh(task)
-    return task, p
+    return event_result(db, task, p)
 
 def get_task(task_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
     return task_access(db, task_id, user)[0]
@@ -110,7 +118,8 @@ def update_task(task_id: int, data: TaskPatch, user: User = Depends(current_user
         db.add(Notification(user_id=task.assignee_id, workspace_id=p.workspace_id, kind="task_assigned", message=f"Assigned: {task.title}", entity_id=task.id))
     db.commit()
     db.refresh(task)
-    return task, p, assignment_changed
+    task_out, project_out = event_result(db, task, p)
+    return task_out, project_out, assignment_changed
 
 def move_task(task_id: int, data: TaskMove, user: User = Depends(current_user), db: Session = Depends(get_db)):
     task, p = task_access(db, task_id, user)
@@ -141,7 +150,7 @@ def move_task(task_id: int, data: TaskMove, user: User = Depends(current_user), 
         event_activity(db, p, user, "task.completed", task.id)
     db.commit()
     db.refresh(task)
-    return task, p
+    return event_result(db, task, p)
 
 def delete_task(task_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
     task, p = task_access(db, task_id, user)
@@ -155,5 +164,7 @@ def delete_task(task_id: int, user: User = Depends(current_user), db: Session = 
     reorder(sorted(siblings(db, old_column), key=lambda row: (row.position, row.id)))
     event_activity(db, p, user, "task.deleted", task_id)
     db.commit()
-    return p
+    result = ProjectOut.model_validate(p)
+    db.rollback()
+    return result
 

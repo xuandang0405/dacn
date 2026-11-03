@@ -1,5 +1,6 @@
 """Private local document store. Keys are generated, never taken from filenames."""
 import hashlib
+import logging
 import re
 import secrets
 from pathlib import Path
@@ -37,3 +38,11 @@ def read(key: str, digest: str) -> bytes:
 
 def remove(key: str):
     path_for(key).unlink(missing_ok=True)
+
+
+def remove_deleted_documents(keys: list[str]):
+    for key in keys:
+        try:
+            remove(key)
+        except OSError:
+            logging.getLogger(__name__).warning("Document cleanup needs retry after scope deletion")
