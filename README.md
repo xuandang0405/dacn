@@ -8,6 +8,10 @@
 
 Đọc [CONTRIBUTING.md](CONTRIBUTING.md) trước khi nhận việc. Mỗi thành viên làm trên nhánh được phân công, tự push và mở PR kèm kết quả kiểm tra. Trong đợt khởi tạo, chọn base **integration/mvp**; main/develop chờ bản nền được review. [Danh sách phần việc](https://github.com/xuandang0405/dacn/issues?q=is%3Aissue+is%3Aopen).
 
+[Bảng yêu cầu theo tiêu chí tiến độ của thầy](docs/team/YEU_CAU_TIEN_DO_02.md) chia phần việc theo bốn Lead, yêu cầu con, sản phẩm cần nộp và bằng chứng nghiệm thu. Đăng/Dương đã có quyền ghi; Đạt/Khoa được bổ sung sau. [Issue #8](https://github.com/xuandang0405/dacn/issues/8) là đầu mối tổng hợp hồ sơ.
+
+Phân công ngày 04/11: Đăng setup + tài khoản/workspace; Dương làm AI/tài liệu, Đạt làm Task/Kanban/Realtime, Khoa làm Skills/Workload/Analytics. Cả bốn người làm đủ **API + frontend + Docker** của phân hệ mình. [Gói code theo từng người](docs/team/PHAN_CHIA_CODE_FULLSTACK.md).
+
 ## Kiến trúc đã triển khai
 
 ```mermaid
@@ -124,7 +128,7 @@ Browser E2E: cài Playwright trong môi trường kiểm thử riêng, rồi ch�
 
 Frontend: `npm ci`, `npx tsc --noEmit`, `npm run build`. CI chạy MySQL 8 và frontend build trên PR vào develop/main.
 
-Lần chạy CI ngày 21/10 bị GitHub chặn khởi chạy vì vấn đề thanh toán tài khoản. Xem tab Actions để kiểm tra kết quả mới nhất; chỉ merge khi hai job bắt buộc đã đạt. Nhánh integration/mvp chứa bản nền và hướng dẫn làm việc; main/develop chờ review trước khi tích hợp.
+Lượt CI ngày 03/11/2026 trên commit 3a5d569 đã đạt Backend MySQL 8 và Frontend build: [kết quả chạy](https://github.com/xuandang0405/dacn/actions/runs/41571838936). Mỗi PR mới vẫn phải có kết quả kiểm tra của thay đổi đó. Nhánh integration/mvp chứa bản nền và hướng dẫn làm việc; main/develop chờ review PR #10 trước khi tích hợp.
 
 ## Những phần còn mở
 

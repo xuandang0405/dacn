@@ -1,7 +1,16 @@
 # Thêm người phụ trách module sau khi tài khoản đã có quyền Write.
 * @xuandang0405
-/backend/ @xuandang0405
+/backend/app/api/ai.py @Pham-Minh-Duong @xuandang0405
+/backend/app/services/gemini.py @Pham-Minh-Duong @xuandang0405
+/backend/app/services/documents.py @Pham-Minh-Duong @xuandang0405
+/backend/app/services/storage.py @Pham-Minh-Duong @xuandang0405
+/backend/tests/evaluate_ai.py @Pham-Minh-Duong @xuandang0405
+/backend/tests/fixtures/ @Pham-Minh-Duong @xuandang0405
+/frontend/src/components/AIAssistant.tsx @Pham-Minh-Duong @xuandang0405
+/docker/smoke_ai.py @Pham-Minh-Duong @xuandang0405
+/docker/compose.ai-checks.yml @Pham-Minh-Duong @xuandang0405
 /database/ @xuandang0405
 /docs/ @xuandang0405
 /docker-compose.yml @xuandang0405
-/.github/ @xuandang0405
+/.github/ @Pham-Minh-Duong @xuandang0405
+/docs/team/ @Pham-Minh-Duong @xuandang0405
