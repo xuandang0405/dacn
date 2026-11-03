@@ -4,12 +4,12 @@
 
 | Thành viên | Phần việc | Nhánh nhận việc | Issue |
 |---|---|---|---|
-| Nguyễn Xuân Đăng | Setup GitHub/hạ tầng, CSDL và tích hợp chung | `setup/platform` | [#1](https://github.com/xuandang0405/dacn/issues/1) |
+| Nguyễn Xuân Đăng | Setup chung + API/frontend/Docker Auth/Workspace | `setup/platform` | [#1](https://github.com/xuandang0405/dacn/issues/1) |
 | Phạm Minh Dương | API + frontend + Docker cho AI/tài liệu | `feature/ai-documents` | [#2](https://github.com/xuandang0405/dacn/issues/2) |
 | Phạm Tấn Đạt | API + frontend + Docker cho Task/Kanban/Realtime | `feature/task-kanban` | [#3](https://github.com/xuandang0405/dacn/issues/3) |
 | Trần Đăng Khoa | API + frontend + Docker cho Skills/Workload/Analytics | `feature/skills-analytics` | [#4](https://github.com/xuandang0405/dacn/issues/4) |
 
-Phân công ngày 04/11 chia theo phân hệ. Dương, Đạt và Khoa mỗi người tự làm API, giao diện và phần Docker của cùng một phân hệ. Đăng setup và tích hợp nền chung. [Gói mã nguồn và danh sách tệp](docs/team/PHAN_CHIA_CODE_FULLSTACK.md).
+Phân công ngày 04/11 chia theo phân hệ. Cả bốn người làm API, giao diện và Docker của phân hệ mình; Đăng làm thêm setup và tích hợp nền chung. [Gói mã nguồn và danh sách tệp](docs/team/PHAN_CHIA_CODE_FULLSTACK.md).
 
 Mỗi người nhận từng yêu cầu con, đọc điều kiện nghiệm thu, thực hiện thay đổi và tự push bằng tài khoản của mình. Đăng và Dương đã có quyền ghi. Đạt và Khoa được chủ repository bổ sung sau.
 

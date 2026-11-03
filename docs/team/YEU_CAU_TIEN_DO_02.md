@@ -1,10 +1,10 @@
 # Yêu cầu tiến độ lần 2 theo phân hệ
 
-Phân công ngày 04/11/2026: Đăng setup và tích hợp chung. Dương, Đạt, Khoa mỗi người tự thực hiện API, frontend và kiểm tra Docker của một phân hệ.
+Phân công ngày 04/11/2026: Cả bốn người tự thực hiện API, frontend và kiểm tra Docker của phân hệ mình. Đăng nhận thêm setup và tích hợp chung.
 
 | Người | Phân hệ | API | Frontend | Docker | Nhánh |
 |---|---|---|---|---|---|
-| Nguyễn Xuân Đăng | [Nhóm #1](https://github.com/xuandang0405/dacn/issues/1) | Nền tài khoản/workspace, model/schema/core chung để các phân hệ dùng. | Nền App/Auth/Settings và thư viện chung; tích hợp thay đổi của nhóm. | Compose gốc, Dockerfile, env mẫu, DB/seed/volume/healthcheck; tích hợp kiểm tra của từng bạn. | setup/platform |
+| Nguyễn Xuân Đăng | [Nhóm #1](https://github.com/xuandang0405/dacn/issues/1) | Auth/workspace/invitation và model/schema/core chung. | AuthScreen/App/SettingsPanel/InvitationInbox. | Compose chung và kiểm tra Docker Auth/Workspace. | setup/platform |
 | Phạm Minh Dương | [Nhóm #2](https://github.com/xuandang0405/dacn/issues/2) | ai.py, Gemini, tài liệu và storage. | AIAssistant.tsx: tài liệu, hỏi đáp, bản nháp và xác nhận. | Smoke/Compose riêng cho AI và tài liệu; phối hợp Compose gốc của Đăng. | feature/ai-documents |
 | Phạm Tấn Đạt | [Nhóm #3](https://github.com/xuandang0405/dacn/issues/3) | Project/task/subtask/comment/notification, transaction và WebSocket. | Board.tsx, MyTasks.tsx, Notifications.tsx. | Smoke/Compose riêng cho task/WebSocket; bài tải và E2E trong stack. | feature/task-kanban |
 | Trần Đăng Khoa | [Nhóm #4](https://github.com/xuandang0405/dacn/issues/4) | insights.py, analytics.py: skills, capacity, workload, dashboard và MAPE. | Skills.tsx và Overview.tsx, trạng thái dữ liệu và VI/EN. | Smoke/Compose riêng cho insights, kiểm tra MySQL và ghép cloud. | feature/skills-analytics |

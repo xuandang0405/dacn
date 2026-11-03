@@ -1,11 +1,11 @@
 # Chia mã nguồn theo phân hệ
 
-Bản chia ngày 04/11/2026. Dương, Đạt và Khoa mỗi người phụ trách API, frontend và phần Docker của một phân hệ. Đăng setup và tích hợp chung.
+Bản chia ngày 04/11/2026. Mỗi người phụ trách API, frontend và phần Docker của cùng một phân hệ; Đăng setup và tích hợp chung.
 Mã nền: 3a5d56950a786835bb78ae6b982a4a3c453ed780. Mã nguồn đã tồn tại trên repository; các gói là bản bàn giao module để thực hiện yêu cầu, không phải lịch sử đóng góp mới.
 
 | Người | Phân hệ | API | Frontend | Docker |
 |---|---|---|---|---|
-| Đăng | Setup chung | Nền xác thực/workspace dùng chung | Shell, đăng nhập/workspace dùng chung | Compose, image, DB/seed, volume và cấu hình gốc |
+| Đăng | Setup + Auth/Workspace | API tài khoản/workspace/lời mời và nền dùng chung | AuthScreen, App, SettingsPanel, InvitationInbox | Compose, image, DB/seed, volume và kiểm tra Docker Auth/Workspace |
 | Dương | AI và tài liệu | ai.py, Gemini/documents/storage | AIAssistant | Smoke test Docker tài liệu/AI |
 | Đạt | Project/Task/Kanban/Realtime | projects/tasks/collaboration, workflow/transaction/Hub | Board, MyTasks, Notifications | Kiểm tra Docker task/WS/tải |
 | Khoa | Kỹ năng/Workload/Analytics | insights.py, analytics.py | Skills, Overview | Kiểm tra Docker số liệu/role |
@@ -28,11 +28,6 @@ Mã nền: 3a5d56950a786835bb78ae6b982a4a3c453ed780. Mã nguồn đã tồn tạ
 
 Các gói không chứa .git, .github, .env thật, database, tài liệu người dùng, node_modules, .venv hoặc thư mục build. Không phải các ứng dụng chạy độc lập.
 
-## Tải mã nguồn theo người
+## Tải mã nguồn
 
-- [Đăng: 01_Dang_Setup.zip](https://github.com/xuandang0405/dacn/releases/download/chia-code-fullstack-2026-11-04/01_Dang_Setup.zip)
-- [Dương: 02_Duong_AI_TaiLieu.zip](https://github.com/xuandang0405/dacn/releases/download/chia-code-fullstack-2026-11-04/02_Duong_AI_TaiLieu.zip)
-- [Đạt: 03_Dat_Task_Kanban.zip](https://github.com/xuandang0405/dacn/releases/download/chia-code-fullstack-2026-11-04/03_Dat_Task_Kanban.zip)
-- [Khoa: 04_Khoa_Skills_Analytics.zip](https://github.com/xuandang0405/dacn/releases/download/chia-code-fullstack-2026-11-04/04_Khoa_Skills_Analytics.zip)
-
-Các gói là mã nền để nhận việc. Những file smoke/Compose riêng trong yêu cầu Docker là phần cần bổ sung, chưa có trong bản nền.
+[Trang tải đủ bốn gói](https://github.com/xuandang0405/dacn/releases/tag/chia-code-fullstack-2026-11-04)
