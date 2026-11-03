@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from: str = ""
     document_storage_dir: str = "data/project_documents"
+    db_pool_size: int = Field(default=20, ge=1, le=100)
+    db_max_overflow: int = Field(default=20, ge=0, le=100)
+    db_pool_timeout: int = Field(default=10, ge=1, le=60)
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @field_validator("jwt_secret")
