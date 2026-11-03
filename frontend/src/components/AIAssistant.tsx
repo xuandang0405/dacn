@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { BookOpen, FileText, Trash2, Upload } from "lucide-react";
 import { api } from "@/lib/api";
+import { type DraftPlan, toDraft, toPlan } from "@/lib/ai-draft";
 import { enumLabel, useLanguage } from "@/lib/language";
 import type { AIPlan, Project, ProjectDocument } from "@/lib/types";
 type Suggestion = {
@@ -11,46 +12,6 @@ type Suggestion = {
   workload_percent: number | null;
   overloaded: boolean;
 };
-const aiErrorsVi: Record<string, string> = {
-  "Project already has the maximum of 3 documents":
-    "Dự án đã có tối đa 3 tài liệu.",
-  "Document is empty": "Tài liệu trống.",
-  "Document exceeds the 8 MB limit": "Tài liệu vượt giới hạn 8 MB.",
-  "Invalid PDF file": "Tệp PDF không hợp lệ.",
-  "PDF must be readable, unencrypted, and at most 100 pages":
-    "PDF phải đọc được, không mã hóa và tối đa 100 trang.",
-  "Invalid or oversized DOCX file": "Tệp DOCX không hợp lệ hoặc quá lớn.",
-  "Text files must use UTF-8": "Tệp văn bản phải dùng UTF-8.",
-  "Supported files: PDF, DOCX, TXT, MD": "Chỉ hỗ trợ PDF, DOCX, TXT và MD.",
-  "Document contains no readable text": "Tài liệu không có văn bản đọc được.",
-  "Document text exceeds the 100,000 character limit":
-    "Văn bản vượt giới hạn 100.000 ký tự.",
-  "Upload a project document before asking AI":
-    "Hãy tải tài liệu của dự án lên trước khi hỏi AI.",
-  "Only the uploader or a manager may remove this document":
-    "Chỉ người tải lên hoặc quản lý được xóa tài liệu này.",
-  "Gemini API key is not configured": "Chưa cấu hình khóa Gemini API.",
-  "Gemini API key was rejected": "Khóa Gemini API bị từ chối.",
-  "Gemini rate limit or quota reached; please retry later":
-    "Gemini đã đạt giới hạn lượt gọi; hãy thử lại sau.",
-  "Gemini is temporarily unavailable; please retry":
-    "Gemini tạm thời không khả dụng; hãy thử lại.",
-  "Gemini timed out": "Gemini hết thời gian chờ; hãy thử lại.",
-  "Gemini rejected the request": "Gemini từ chối yêu cầu.",
-  "Gemini returned an invalid response; please retry":
-    "Gemini trả kết quả không hợp lệ; hãy thử lại.",
-  "Gemini returned an invalid plan; please retry":
-    "Gemini trả kế hoạch không hợp lệ; hãy thử lại.",
-};
-function aiError(message: string, language: "vi" | "en") {
-  if (language === "en") return message;
-  if (
-    message.startsWith("Gemini model '") &&
-    message.endsWith(" is unavailable; update GEMINI_MODEL")
-  )
-    return "Model Gemini không khả dụng; hãy cập nhật GEMINI_MODEL.";
-  return aiErrorsVi[message] || message;
-}
 export default function AIAssistant({
   project,
   projects,
@@ -62,9 +23,9 @@ export default function AIAssistant({
   onSelectProject: (p: Project) => void;
   onCreated: () => void;
 }) {
-  const { language, t: tr } = useLanguage();
+  const { language, t: tr, message: messageText } = useLanguage();
   const [story, setStory] = useState("");
-  const [plan, setPlan] = useState<AIPlan | null>(null);
+  const [plan, setPlan] = useState<DraftPlan | null>(null);
   const [requestId, setRequestId] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -72,27 +33,37 @@ export default function AIAssistant({
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [documentBusy, setDocumentBusy] = useState(false);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const projectId = project?.id;
   useEffect(() => {
     setDocuments([]);
     setPlan(null);
+    setRequestId(null);
+    setSuggestions({});
+    setStory("");
+    setQuestion("");
     setAnswer("");
     setError("");
-    if (!project) return;
+    if (!projectId) return;
+    setDocumentsLoading(true);
     let active = true;
     api
-      .get<ProjectDocument[]>(`/ai/projects/${project.id}/documents`)
+      .get<ProjectDocument[]>(`/ai/projects/${projectId}/documents`)
       .then((rows) => {
         if (active) setDocuments(rows);
       })
       .catch((e) => {
         if (active) setError(e.message);
+      })
+      .finally(() => {
+        if (active) setDocumentsLoading(false);
       });
     return () => {
       active = false;
     };
-  }, [project?.id]);
+  }, [projectId]);
   async function upload(file: File | undefined) {
-    if (!project || !file) return;
+    if (!project || !file || busy || documentBusy || documentsLoading) return;
     setDocumentBusy(true);
     setError("");
     try {
@@ -110,6 +81,7 @@ export default function AIAssistant({
     }
   }
   async function removeDocument(id: number) {
+    if (busy || documentBusy) return;
     setDocumentBusy(true);
     setError("");
     try {
@@ -124,7 +96,14 @@ export default function AIAssistant({
     }
   }
   async function query(mode: "analyze" | "ask") {
-    if (!project || !documents.length || (mode === "ask" && !question.trim()))
+    if (
+      !project ||
+      busy ||
+      documentBusy ||
+      documentsLoading ||
+      !documents.length ||
+      (mode === "ask" && !question.trim())
+    )
       return;
     setBusy(true);
     setError("");
@@ -145,12 +124,19 @@ export default function AIAssistant({
       setBusy(false);
     }
   }
-  const [suggestions, setSuggestions] = useState<Record<number, Suggestion[]>>(
+  const [suggestions, setSuggestions] = useState<Record<string, Suggestion[]>>(
     {},
   );
   async function generate(e: React.FormEvent) {
     e.preventDefault();
-    if (!project) return;
+    if (
+      !project ||
+      busy ||
+      documentBusy ||
+      documentsLoading ||
+      !documents.length
+    )
+      return;
     setBusy(true);
     setError("");
     try {
@@ -158,7 +144,7 @@ export default function AIAssistant({
         "/ai/decompose-task",
         { project_id: project.id, story, language },
       );
-      setPlan(data.plan);
+      setPlan(toDraft(data.plan));
       setSuggestions({});
       setRequestId(data.request_id);
     } catch (e) {
@@ -168,10 +154,13 @@ export default function AIAssistant({
     }
   }
   async function confirm() {
-    if (!requestId || !plan) return;
+    if (!requestId || !plan || busy) return;
+    setError("");
     setBusy(true);
     try {
-      await api.post(`/ai/requests/${requestId}/confirm`, { plan });
+      await api.post(`/ai/requests/${requestId}/confirm`, {
+        plan: toPlan(plan),
+      });
       onCreated();
     } catch (e) {
       setError((e as Error).message);
@@ -238,6 +227,7 @@ export default function AIAssistant({
               subtasks: [
                 ...t.subtasks,
                 {
+                  localId: crypto.randomUUID(),
                   title: tr("Công việc con mới", "New subtask"),
                   description: "",
                   estimated_hours: 0,
@@ -266,6 +256,7 @@ export default function AIAssistant({
       tasks: [
         ...plan.tasks,
         {
+          localId: crypto.randomUUID(),
           title: tr("Công việc mới", "New task"),
           description: "",
           estimated_hours: 0,
@@ -278,6 +269,7 @@ export default function AIAssistant({
   }
   async function suggest(index: number) {
     if (!project || !plan) return;
+    const localId = plan.tasks[index].localId;
     try {
       const skills = encodeURIComponent(
         plan.tasks[index].required_skills.join(","),
@@ -285,7 +277,7 @@ export default function AIAssistant({
       const rows = await api.get<Suggestion[]>(
         `/ai/projects/${project.id}/suggest-members?skills=${skills}`,
       );
-      setSuggestions((current) => ({ ...current, [index]: rows }));
+      setSuggestions((current) => ({ ...current, [localId]: rows }));
     } catch (e) {
       setError((e as Error).message);
     }
@@ -317,13 +309,14 @@ export default function AIAssistant({
       </div>
       {error && (
         <div className="error" role="alert">
-          {aiError(error, language)}
+          {messageText(error)}
         </div>
       )}
       <div className="panel ai-form">
         <label>
           {tr("Dự án", "Project")}
           <select
+            disabled={busy || documentBusy}
             value={project?.id || ""}
             onChange={(e) => {
               const selected = projects.find(
@@ -359,14 +352,19 @@ export default function AIAssistant({
                 className="icon-button"
                 type="button"
                 title={tr("Xóa tài liệu", "Delete document")}
-                disabled={documentBusy}
+                disabled={busy || documentBusy || documentsLoading}
                 onClick={() => removeDocument(document.id)}
               >
                 <Trash2 size={16} />
               </button>
             </div>
           ))}
-          {!documents.length && (
+          {documentsLoading && (
+            <p className="muted">
+              {tr("Đang tải tài liệu…", "Loading documents…")}
+            </p>
+          )}
+          {!documentsLoading && !documents.length && (
             <p className="muted">
               {tr(
                 "Chưa có tài liệu. Hãy tải lên trước khi hỏi AI.",
@@ -387,7 +385,13 @@ export default function AIAssistant({
             type="file"
             accept=".pdf,.docx,.txt,.md"
             style={{ display: "none" }}
-            disabled={!project || documentBusy || documents.length >= 3}
+            disabled={
+              !project ||
+              busy ||
+              documentBusy ||
+              documentsLoading ||
+              documents.length >= 3
+            }
             onChange={(e) => {
               const file = e.target.files?.[0];
               void upload(file);
@@ -407,7 +411,9 @@ export default function AIAssistant({
         <button
           type="button"
           className="button subtle"
-          disabled={busy || !documents.length}
+          disabled={
+            busy || documentBusy || documentsLoading || !documents.length
+          }
           onClick={() => query("analyze")}
         >
           {tr("Phân tích dự án và hướng dẫn", "Analyze project and guide me")}
@@ -416,6 +422,7 @@ export default function AIAssistant({
           {tr("Câu hỏi về dự án", "Question about the project")}
           <textarea
             rows={3}
+            maxLength={2000}
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             placeholder={tr(
@@ -427,7 +434,13 @@ export default function AIAssistant({
         <button
           type="button"
           className="button primary"
-          disabled={busy || !documents.length || !question.trim()}
+          disabled={
+            busy ||
+            documentBusy ||
+            documentsLoading ||
+            !documents.length ||
+            !question.trim()
+          }
           onClick={() => query("ask")}
         >
           {busy
@@ -449,6 +462,7 @@ export default function AIAssistant({
             <textarea
               required
               minLength={10}
+              maxLength={4000}
               rows={6}
               value={story}
               onChange={(e) => setStory(e.target.value)}
@@ -459,8 +473,15 @@ export default function AIAssistant({
             />
           </label>
           <button
+            type="submit"
             className="button primary full"
-            disabled={busy || !project || !documents.length}
+            disabled={
+              busy ||
+              documentBusy ||
+              documentsLoading ||
+              !project ||
+              !documents.length
+            }
           >
             {busy
               ? tr("ĐANG PHÂN TÍCH YÊU CẦU…", "ANALYZING REQUIREMENTS…")
@@ -493,7 +514,7 @@ export default function AIAssistant({
           </div>
           <div className="ai-task-list">
             {plan.tasks.map((task, i) => (
-              <div className="ai-task" key={i}>
+              <div className="ai-task" key={task.localId}>
                 <div className="ai-task-head">
                   <span className="number">
                     DRAFT № {String(i + 1).padStart(2, "0")}
@@ -504,6 +525,7 @@ export default function AIAssistant({
                     onChange={(e) => edit(i, "title", e.target.value)}
                   />
                   <button
+                    type="button"
                     className="icon-button"
                     title={tr("Bỏ công việc", "Remove task")}
                     onClick={() =>
@@ -566,7 +588,7 @@ export default function AIAssistant({
                 </label>
                 <div className="ai-subtasks">
                   {task.subtasks.map((child, j) => (
-                    <div key={j}>
+                    <div key={child.localId}>
                       <input
                         aria-label={tr("Tên công việc con", "Subtask title")}
                         value={child.title}
@@ -590,6 +612,7 @@ export default function AIAssistant({
                         }
                       />
                       <button
+                        type="button"
                         className="icon-button"
                         onClick={() => removeSubtask(i, j)}
                         title={tr("Bỏ công việc con", "Remove subtask")}
@@ -601,18 +624,23 @@ export default function AIAssistant({
                 </div>
                 <div className="ai-task-actions">
                   <button
+                    type="button"
                     className="button subtle"
                     onClick={() => addSubtask(i)}
                   >
                     + {tr("Công việc con", "Subtask")}
                   </button>
-                  <button className="button subtle" onClick={() => suggest(i)}>
+                  <button
+                    type="button"
+                    className="button subtle"
+                    onClick={() => suggest(i)}
+                  >
                     {tr("Gợi ý thành viên", "Suggest members")}
                   </button>
                 </div>
-                {suggestions[i] && (
+                {suggestions[task.localId] && (
                   <div className="suggestions">
-                    {suggestions[i].slice(0, 5).map((s) => (
+                    {suggestions[task.localId].slice(0, 5).map((s) => (
                       <div key={s.user_id}>
                         <strong>{s.name}</strong>
                         <span>
@@ -623,7 +651,7 @@ export default function AIAssistant({
                         </span>
                       </div>
                     ))}
-                    {!suggestions[i].length && (
+                    {!suggestions[task.localId].length && (
                       <p>
                         {tr(
                           "Chưa có thành viên phù hợp.",
@@ -637,6 +665,7 @@ export default function AIAssistant({
             ))}
           </div>
           <button
+            type="button"
             className="button subtle"
             onClick={addTask}
             disabled={plan.tasks.length >= 20}
@@ -645,6 +674,7 @@ export default function AIAssistant({
           </button>
           <div className="drawer-actions">
             <button
+              type="button"
               className="button primary"
               onClick={confirm}
               disabled={busy || !plan.tasks.length}
@@ -655,7 +685,11 @@ export default function AIAssistant({
               )}{" "}
               [{String(plan.tasks.length).padStart(2, "0")}]
             </button>
-            <button className="button subtle" onClick={() => setPlan(null)}>
+            <button
+              type="button"
+              className="button subtle"
+              onClick={() => setPlan(null)}
+            >
               {tr("Hủy bản nháp", "Discard draft")}
             </button>
           </div>

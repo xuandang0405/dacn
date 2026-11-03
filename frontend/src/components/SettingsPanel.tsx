@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, endSession } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 import type { Member, User, Workspace } from "@/lib/types";
 
@@ -15,7 +15,7 @@ export default function SettingsPanel({
   onWorkspaceChange: (w: Workspace) => void;
   onWorkspaceDelete: () => void;
 }) {
-  const { t } = useLanguage();
+  const { t, message: messageText } = useLanguage();
   const [role, setRole] = useState("");
   const [name, setName] = useState(workspace.name);
   const [description, setDescription] = useState(workspace.description);
@@ -23,30 +23,50 @@ export default function SettingsPanel({
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   useEffect(() => {
+    let active = true;
     api
       .get<Member[]>(`/workspaces/${workspace.id}/members`)
-      .then((rows) =>
-        setRole(rows.find((m) => m.user_id === user.id)?.role || ""),
-      );
+      .then(
+        (rows) =>
+          active &&
+          setRole(rows.find((m) => m.user_id === user.id)?.role || ""),
+      )
+      .catch((e) => {
+        if (active) setError(e.message);
+      });
+    return () => {
+      active = false;
+    };
   }, [workspace.id, user.id]);
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    if (saving) return;
     setError("");
+    setMessage("");
+    setSaving(true);
     try {
       const updated = await api.put<Workspace>(`/workspaces/${workspace.id}`, {
         name,
         description,
       });
       onWorkspaceChange(updated);
-      setMessage(t("Đã lưu workspace.", "Workspace saved."));
+      setMessage("Workspace saved.");
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setSaving(false);
     }
   }
   async function changePassword(e: React.FormEvent) {
     e.preventDefault();
+    if (changingPassword) return;
     setError("");
+    setMessage("");
+    setChangingPassword(true);
     try {
       await api.post("/auth/change-password", {
         old_password: oldPassword,
@@ -54,17 +74,15 @@ export default function SettingsPanel({
       });
       setOldPassword("");
       setNewPassword("");
-      setMessage(
-        t(
-          "Đã đổi mật khẩu và thu hồi các phiên đăng nhập khác.",
-          "Password changed and other sessions revoked.",
-        ),
-      );
+      endSession("password_changed");
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setChangingPassword(false);
     }
   }
   async function remove() {
+    if (deleting) return;
     if (
       !confirm(
         t(
@@ -74,11 +92,16 @@ export default function SettingsPanel({
       )
     )
       return;
+    setError("");
+    setMessage("");
+    setDeleting(true);
     try {
       await api.delete(`/workspaces/${workspace.id}`);
       onWorkspaceDelete();
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setDeleting(false);
     }
   }
   return (
@@ -92,8 +115,8 @@ export default function SettingsPanel({
           )}
         </p>
       </div>
-      {error && <div className="error">{error}</div>}
-      {message && <div className="success">{message}</div>}
+      {error && <div className="error">{messageText(error)}</div>}
+      {message && <div className="success">{messageText(message)}</div>}
       {(role === "OWNER" || role === "ADMIN") && (
         <form className="panel settings-form" onSubmit={save}>
           <h3>{t("THÔNG TIN WORKSPACE", "WORKSPACE PROFILE")}</h3>
@@ -101,6 +124,7 @@ export default function SettingsPanel({
             {t("Tên workspace", "Workspace name")}
             <input
               required
+              maxLength={160}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -113,14 +137,21 @@ export default function SettingsPanel({
               onChange={(e) => setDescription(e.target.value)}
             />
           </label>
-          <button className="button primary">
-            {t("Lưu thay đổi", "Save changes")}
+          <button
+            type="submit"
+            className="button primary"
+            disabled={saving || deleting}
+          >
+            {saving
+              ? t("Đang lưu…", "Saving…")
+              : t("Lưu thay đổi", "Save changes")}
           </button>
           {role === "OWNER" && (
             <button
               type="button"
               className="button danger settings-delete"
               onClick={remove}
+              disabled={saving || deleting}
             >
               {t("Xóa workspace", "Delete workspace")}
             </button>
@@ -144,12 +175,19 @@ export default function SettingsPanel({
             required
             type="password"
             minLength={10}
+            maxLength={128}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
           />
         </label>
-        <button className="button primary">
-          {t("Cập nhật mật khẩu", "Update password")}
+        <button
+          type="submit"
+          className="button primary"
+          disabled={changingPassword}
+        >
+          {changingPassword
+            ? t("Đang cập nhật…", "Updating…")
+            : t("Cập nhật mật khẩu", "Update password")}
         </button>
       </form>
     </>

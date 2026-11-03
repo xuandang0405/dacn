@@ -225,6 +225,7 @@ def test_mention_notification_websocket(client):
         assert client.post("/api/v1/invitations/respond", json={"token": pending["token"], "accept": True}, headers=member).status_code == 200
         project = client.post(f"/api/v1/workspaces/{ws['id']}/projects", json={"name": "Mentions board"}, headers=owner).json()
         assert client.post(f"/api/v1/projects/{project['id']}/members/{response.json()['user_id']}", headers=owner).status_code == 201
+        assert socket.receive_json()["payload"]["kind"] == "project_access_changed"
         task = client.post(f"/api/v1/projects/{project['id']}/tasks", json={"title": "Review"}, headers=owner).json()
         mention = client.post(f"/api/v1/tasks/{task['id']}/comments", json={"content": "Review with @member4"}, headers=owner)
         assert mention.status_code == 201

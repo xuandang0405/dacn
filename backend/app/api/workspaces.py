@@ -1,7 +1,7 @@
 from datetime import timedelta
 import secrets
 from sqlalchemy.exc import IntegrityError
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.db import get_db
@@ -9,6 +9,8 @@ from app.models import WorkspaceInvitation, utcnow, Activity, Notification, Proj
 from app.schemas import InviteIn, MemberOut, RoleIn, WorkspaceIn, WorkspaceOut
 from app.realtime import hub
 from app.security import current_user, workspace_access
+from app.models import ProjectDocument
+from app.services import storage
 
 router = APIRouter(prefix="/workspaces", tags=["Workspaces"])
 
@@ -40,10 +42,12 @@ def update_workspace(workspace_id: int, data: WorkspaceIn, user: User = Depends(
     return ws
 
 @router.delete("/{workspace_id}", status_code=204, summary="Delete workspace")
-def delete_workspace(workspace_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def delete_workspace(workspace_id: int, background_tasks: BackgroundTasks, user: User = Depends(current_user), db: Session = Depends(get_db)):
     workspace_access(db, workspace_id, user, {"OWNER"})
+    keys = list(db.scalars(select(ProjectDocument.storage_key).join(Project, Project.id == ProjectDocument.project_id).where(Project.workspace_id == workspace_id)))
     db.delete(db.get(Workspace, workspace_id))
     db.commit()
+    background_tasks.add_task(storage.remove_deleted_documents, keys)
 
 @router.get("/{workspace_id}/members", response_model=list[MemberOut], summary="Workspace members")
 def members(workspace_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
@@ -52,7 +56,7 @@ def members(workspace_id: int, user: User = Depends(current_user), db: Session =
     return [MemberOut(user_id=u.id, name=u.name, email=u.email, username=u.username, role=m.role, capacity_hours=m.capacity_hours) for m, u in rows]
 
 @router.post("/{workspace_id}/members", status_code=201, summary="Send a pending workspace invitation")
-async def invite(workspace_id: int, data: InviteIn, actor: User = Depends(current_user), db: Session = Depends(get_db)):
+def invite(workspace_id: int, data: InviteIn, background_tasks: BackgroundTasks, actor: User = Depends(current_user), db: Session = Depends(get_db)):
     workspace_access(db, workspace_id, actor, {"OWNER", "ADMIN"})
     user = db.scalar(select(User).where(User.email == data.email.lower(), User.active.is_(True)))
     if not user:
@@ -77,11 +81,13 @@ async def invite(workspace_id: int, data: InviteIn, actor: User = Depends(curren
     except IntegrityError:
         db.rollback()
         raise HTTPException(409, "Invitation already pending")
-    await hub.publish_user(user.id, "notification.created", {"kind": "invitation", "workspace_id": workspace_id})
-    return {"id": row.id, "user_id": user.id, "status": row.status, "expires_at": row.expires_at}
+    result = {"id": row.id, "user_id": user.id, "status": row.status, "expires_at": row.expires_at}
+    background_tasks.add_task(hub.publish_user, user.id, "notification.created", {"kind": "invitation", "workspace_id": workspace_id})
+    db.rollback()
+    return result
 
 @router.patch("/{workspace_id}/members/{user_id}", response_model=MemberOut, summary="Change member role")
-async def change_role(workspace_id: int, user_id: int, data: RoleIn, actor: User = Depends(current_user), db: Session = Depends(get_db)):
+def change_role(workspace_id: int, user_id: int, data: RoleIn, background_tasks: BackgroundTasks, actor: User = Depends(current_user), db: Session = Depends(get_db)):
     workspace_access(db, workspace_id, actor, {"OWNER"})
     member = db.scalar(select(WorkspaceMember).where(WorkspaceMember.workspace_id == workspace_id, WorkspaceMember.user_id == user_id, WorkspaceMember.status == "ACTIVE"))
     if not member or member.role == "OWNER":
@@ -90,12 +96,14 @@ async def change_role(workspace_id: int, user_id: int, data: RoleIn, actor: User
     db.add(Notification(user_id=user_id, workspace_id=workspace_id, kind="role_changed", message=f"Your role is now {data.role}", entity_id=workspace_id))
     db.add(Activity(workspace_scope_id=workspace_id, actor_id=actor.id, action="member.role_changed", entity="user", entity_id=user_id))
     db.commit()
-    await hub.publish_user(user_id, "notification.created", {"kind": "role_changed", "workspace_id": workspace_id})
+    background_tasks.add_task(hub.publish_user, user_id, "notification.created", {"kind": "role_changed", "workspace_id": workspace_id})
     user = db.get(User, user_id)
-    return MemberOut(user_id=user.id, name=user.name, email=user.email, username=user.username, role=member.role, capacity_hours=member.capacity_hours)
+    result = MemberOut(user_id=user.id, name=user.name, email=user.email, username=user.username, role=member.role, capacity_hours=member.capacity_hours)
+    db.rollback()
+    return result
 
 @router.delete("/{workspace_id}/members/{user_id}", status_code=204, summary="Remove member")
-def remove_member(workspace_id: int, user_id: int, actor: User = Depends(current_user), db: Session = Depends(get_db)):
+def remove_member(workspace_id: int, user_id: int, background_tasks: BackgroundTasks, actor: User = Depends(current_user), db: Session = Depends(get_db)):
     workspace_access(db, workspace_id, actor, {"OWNER", "ADMIN"})
     member = db.scalar(select(WorkspaceMember).where(WorkspaceMember.workspace_id == workspace_id, WorkspaceMember.user_id == user_id, WorkspaceMember.status == "ACTIVE"))
     if not member or member.role == "OWNER" or (member.role == "ADMIN" and actor.id != db.get(Workspace, workspace_id).owner_id):
@@ -105,9 +113,10 @@ def remove_member(workspace_id: int, user_id: int, actor: User = Depends(current
     if project_ids:
         from sqlalchemy import update
         task_ids = db.scalars(select(Task.id).where(Task.project_id.in_(project_ids))).all()
-        db.execute(update(Task).where(Task.project_id.in_(project_ids), Task.assignee_id == user_id).values(assignee_id=None))
+        db.execute(update(Task).where(Task.project_id.in_(project_ids), Task.assignee_id == user_id).values(assignee_id=None, version=Task.version + 1))
         if task_ids:
             db.execute(update(Subtask).where(Subtask.task_id.in_(task_ids), Subtask.assignee_id == user_id).values(assignee_id=None))
     for pm in db.scalars(select(ProjectMember).where(ProjectMember.user_id == user_id, ProjectMember.project_id.in_(project_ids))).all():
         db.delete(pm)
     db.commit()
+    background_tasks.add_task(hub.publish_user, user_id, "notification.created", {"kind": "membership_removed", "workspace_id": workspace_id})

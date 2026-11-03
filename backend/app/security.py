@@ -46,7 +46,13 @@ def user_from_token(raw: str, db: Session) -> User:
 def current_user(credentials: HTTPAuthorizationCredentials | None = Depends(bearer), db: Session = Depends(get_db)) -> User:
     if not credentials:
         raise HTTPException(401, "Authentication required")
-    return user_from_token(credentials.credentials, db)
+    user = user_from_token(credentials.credentials, db)
+    # Authentication and the handler use separate thread-pool turns. Do not hold
+    # a DB connection between them: queued authentication can otherwise starve
+    # the handlers that would return the pool's already checked-out connections.
+    db.expunge(user)
+    db.rollback()
+    return user
 
 def issue_refresh(db: Session, user_id: int) -> str:
     raw = secrets.token_urlsafe(48)

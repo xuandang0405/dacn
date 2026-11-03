@@ -15,7 +15,7 @@ export default function MyTasks({
   userId: number;
   onOpenProject: (project: Project) => void;
 }) {
-  const { language, t } = useLanguage();
+  const { language, t, message: messageText } = useLanguage();
   const [rows, setRows] = useState<AssignedTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -82,15 +82,19 @@ export default function MyTasks({
           {t("Đang tải công việc…", "Loading tasks…")}
         </div>
       )}
-      {error && <div className="error">{error}</div>}
+      {error && <div className="error">{messageText(error)}</div>}
       {!loading && !error && rows.length === 0 && (
         <p className="muted" style={{ padding: "28px 0", textAlign: "center" }}>
-          {t("Chưa có công việc nào được phân công.", "No tasks assigned to you yet.")}
+          {t(
+            "Chưa có công việc nào được phân công.",
+            "No tasks assigned to you yet.",
+          )}
         </p>
       )}
       <div className="project-list">
         {rows.map(({ task, project }) => (
           <button
+            type="button"
             className="project-row"
             key={task.id}
             onClick={() => onOpenProject(project)}
@@ -102,7 +106,8 @@ export default function MyTasks({
               </strong>
               <small>
                 {project.name} · {t("Hạn", "Due")}{" "}
-                {task.due_date || t("chưa đặt", "not set")} · EST {task.estimated_hours}h
+                {task.due_date || t("chưa đặt", "not set")} · EST{" "}
+                {task.estimated_hours}h
               </small>
             </span>
             <span className={`priority ${task.priority.toLowerCase()}`}>

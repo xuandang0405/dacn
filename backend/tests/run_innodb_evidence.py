@@ -2,6 +2,7 @@
 Only runs against an explicitly isolated _verify_ database. No live Gemini calls.
 """
 import concurrent.futures as futures
+from contextlib import ExitStack
 import json
 import os
 from pathlib import Path
@@ -57,6 +58,11 @@ server=subprocess.Popen([sys.executable,'-m','uvicorn','app.main:app','--host','
 base='http://127.0.0.1:8820'
 client=httpx.Client(base_url=base,timeout=20,limits=httpx.Limits(max_connections=150,max_keepalive_connections=150))
 evidence={'date':datetime.now(timezone.utc).date().isoformat(),'database_version':version,'engine':'InnoDB','isolation':isolation,'accounts':100,'concurrent_accounts':concurrency,'api_workers':1,'live_gemini':False,'checks':[]}
+load_sockets = []
+load_events = []
+readers = []
+stop_readers = threading.Event()
+load_socket_stack = ExitStack()
 
 
 def check(label, condition, detail):
@@ -116,6 +122,25 @@ try:
         r=client.post(f'/api/v1/projects/{pid}/tasks',headers=headers[0],json={'title':'Realtime commit evidence'});r.raise_for_status()
         events=[json.loads(s.recv(timeout=5)) for s in (s1,s2)]
         check('two_websocket_clients_after_commit',all(e['entity_id']==r.json()['id'] and e['event']=='task.created' for e in events),{'events':[e['event'] for e in events]})
+    socket_count = int(os.environ.get('LOAD_WEBSOCKETS', '2'))
+    assert 0 <= socket_count <= 20
+    def drain(socket, events):
+        while not stop_readers.is_set():
+            try:
+                event = json.loads(socket.recv(timeout=.5))
+                if event.get('event') == 'task.updated': events.append(event['entity_id'])
+            except TimeoutError:
+                continue
+            except Exception:
+                break
+    for i in range(socket_count):
+        socket = load_socket_stack.enter_context(connect(base.replace('http','ws')+f'/api/v1/ws/projects/{pid}',origin='http://localhost:3000',open_timeout=5))
+        socket.send(headers[i]['Authorization'][7:])
+        assert json.loads(socket.recv(timeout=5))['event'] == 'connected'
+        load_sockets.append(socket);load_events.append([])
+        reader = threading.Thread(target=drain,args=(socket,load_events[-1]),daemon=True)
+        reader.start();readers.append(reader)
+    evidence['load_websocket_clients'] = socket_count
     metrics=[]
     for workload in ('list','update'):
         samples=[];statuses=[];started=time.perf_counter()
@@ -131,10 +156,17 @@ try:
         metric={'workload':workload,'requests':len(samples),'concurrent_accounts':concurrency,'rounds':5,'p50_ms':round(ordered[len(ordered)//2],2),'p95_ms':round(ordered[int(len(ordered)*.95)-1],2),'max_ms':round(max(samples),2),'http_errors':sum(s!=200 for s in statuses),'wall_seconds_including_version_reads':round(elapsed,2)}
         metrics.append(metric);check('load_'+workload,metric['http_errors']==0,metric)
     evidence['load']=metrics
+    if load_sockets:
+        deadline = time.monotonic() + 3
+        while min(map(len,load_events)) < 500 and time.monotonic() < deadline: time.sleep(.05)
+        check('realtime_during_100_account_load',all(len(events)==500 for events in load_events),{'clients':socket_count,'updates_per_client':[len(events) for events in load_events]})
 except Exception as exc:
     evidence['failure']={'type':type(exc).__name__,'message':str(exc)[:300]}
     raise
 finally:
+    stop_readers.set()
+    load_socket_stack.close()
+    for reader in readers: reader.join(timeout=2)
     client.close();server.terminate()
     try:server.wait(timeout=10)
     except subprocess.TimeoutExpired:server.kill();server.wait()

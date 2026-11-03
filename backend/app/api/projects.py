@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from app.realtime import hub
 from app.db import get_db
-from app.models import Activity, KanbanColumn, Project, ProjectMember, Subtask, Task, User, WorkspaceMember
+from app.models import Activity, KanbanColumn, Project, ProjectDocument, ProjectMember, Subtask, Task, User, WorkspaceMember
+from app.services import storage
 from app.schemas import ColumnIn, ColumnOut, ProjectIn, ProjectOut
 from app.security import current_user, project_access, workspace_access
 
@@ -44,10 +47,13 @@ def update_project(project_id: int, data: ProjectIn, user: User = Depends(curren
     return p
 
 @router.delete("/projects/{project_id}", status_code=204, summary="Delete project")
-def delete_project(project_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def delete_project(project_id: int, background_tasks: BackgroundTasks, user: User = Depends(current_user), db: Session = Depends(get_db)):
     p = project_access(db, project_id, user, manage=True)
+    keys = list(db.scalars(select(ProjectDocument.storage_key).where(ProjectDocument.project_id == project_id)))
     db.delete(p)
     db.commit()
+    background_tasks.add_task(storage.remove_deleted_documents, keys)
+    background_tasks.add_task(hub.publish, project_id, "project.deleted", p.workspace_id, project_id, user.id, {})
 
 @router.get("/projects/{project_id}/members", response_model=list[int], summary="Project member identifiers")
 def project_members(project_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
@@ -55,30 +61,40 @@ def project_members(project_id: int, user: User = Depends(current_user), db: Ses
     return db.scalars(select(ProjectMember.user_id).where(ProjectMember.project_id == project_id)).all()
 
 @router.post("/projects/{project_id}/members/{user_id}", status_code=201, summary="Add project member")
-def add_project_member(project_id: int, user_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def add_project_member(project_id: int, user_id: int, background_tasks: BackgroundTasks, user: User = Depends(current_user), db: Session = Depends(get_db)):
     p = project_access(db, project_id, user, manage=True)
+    workspace_id = p.workspace_id
     membership = db.scalar(select(WorkspaceMember).where(WorkspaceMember.workspace_id == p.workspace_id, WorkspaceMember.user_id == user_id, WorkspaceMember.status == "ACTIVE"))
     if not membership:
         raise HTTPException(422, "User must be a workspace member")
     if db.scalar(select(ProjectMember).where(ProjectMember.project_id == project_id, ProjectMember.user_id == user_id)):
         raise HTTPException(409, "Already a project member")
     db.add(ProjectMember(project_id=project_id, user_id=user_id))
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "Already a project member")
+    background_tasks.add_task(hub.publish, project_id, "project.members_changed", workspace_id, project_id, user.id, {})
+    background_tasks.add_task(hub.publish_user, user_id, "notification.created", {"kind": "project_access_changed", "project_id": project_id})
     return {"user_id": user_id}
 
 @router.delete("/projects/{project_id}/members/{user_id}", status_code=204, summary="Remove project member")
-def remove_project_member(project_id: int, user_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    project_access(db, project_id, user, manage=True)
+def remove_project_member(project_id: int, user_id: int, background_tasks: BackgroundTasks, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    project = project_access(db, project_id, user, manage=True)
+    workspace_id = project.workspace_id
     member = db.scalar(select(ProjectMember).where(ProjectMember.project_id == project_id, ProjectMember.user_id == user_id))
     if not member:
         raise HTTPException(404, "Member not found")
     from sqlalchemy import update
     task_ids = db.scalars(select(Task.id).where(Task.project_id == project_id)).all()
-    db.execute(update(Task).where(Task.project_id == project_id, Task.assignee_id == user_id).values(assignee_id=None))
+    db.execute(update(Task).where(Task.project_id == project_id, Task.assignee_id == user_id).values(assignee_id=None, version=Task.version + 1))
     if task_ids:
         db.execute(update(Subtask).where(Subtask.task_id.in_(task_ids), Subtask.assignee_id == user_id).values(assignee_id=None))
     db.delete(member)
     db.commit()
+    background_tasks.add_task(hub.publish, project_id, "project.members_changed", workspace_id, project_id, user.id, {})
+    background_tasks.add_task(hub.publish_user, user_id, "notification.created", {"kind": "project_access_changed", "project_id": project_id})
 
 @router.get("/projects/{project_id}/columns", response_model=list[ColumnOut], summary="Kanban columns")
 def columns(project_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):

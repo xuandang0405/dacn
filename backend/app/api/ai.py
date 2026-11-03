@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from app.db import get_db
@@ -18,17 +18,26 @@ router = APIRouter(prefix="/ai", tags=["AI assistant"])
 def project_documents(db: Session, project_id: int) -> list[ProjectDocument]:
     return db.scalars(select(ProjectDocument).where(ProjectDocument.project_id == project_id).order_by(ProjectDocument.created_at, ProjectDocument.id)).all()
 
+
+def access_after_provider(db: Session, project_id: int, user: User):
+    fresh_user = db.get(User, user.id)
+    if not fresh_user or not fresh_user.active or fresh_user.token_version != user.token_version:
+        raise HTTPException(401, "Session revoked; sign in again")
+    return project_access(db, project_id, fresh_user)
+
 @router.get("/projects/{project_id}/documents", response_model=list[ProjectDocumentOut], summary="Project documents available to AI")
 def list_documents(project_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
     project_access(db, project_id, user)
     return project_documents(db, project_id)
 
 @router.post("/projects/{project_id}/documents", response_model=ProjectDocumentOut, status_code=201, summary="Upload a project document")
-async def upload_document(project_id: int, file: UploadFile = File(...), user: User = Depends(current_user), db: Session = Depends(get_db)):
+def upload_document(project_id: int, file: UploadFile = File(...), user: User = Depends(current_user), db: Session = Depends(get_db)):
     project_access(db, project_id, user)
     filename = (file.filename or "").replace("\\", "/").split("/")[-1][:255]
-    content = await file.read(MAX_UPLOAD_BYTES + 1)
-    await file.close()
+    try:
+        content = file.file.read(MAX_UPLOAD_BYTES + 1)
+    finally:
+        file.file.close()
     media_type, extracted_text = read_document(filename, content)
     db.scalar(select(Project.id).where(Project.id == project_id).with_for_update())
     ids = db.scalars(select(ProjectDocument.id).where(ProjectDocument.project_id == project_id).with_for_update()).all()
@@ -68,7 +77,10 @@ async def query_project(project_id: int, data: AIProjectQuery, user: User = Depe
         raise HTTPException(409, "Upload a project document before asking AI")
     if data.mode == "ask" and not data.question.strip():
         raise HTTPException(422, "Question is required")
+    db.expunge_all()
+    db.rollback()
     answer = await answer_project(project.name, documents, data.mode, data.question.strip(), data.language)
+    access_after_provider(db, project_id, user)
     return {"answer": answer, "documents": [document.filename for document in documents]}
 
 @router.post("/decompose-task", summary="Generate a plan for review")
@@ -77,7 +89,10 @@ async def decompose_task(data: AIStory, user: User = Depends(current_user), db: 
     documents = project_documents(db, project.id)
     if not documents:
         raise HTTPException(409, "Upload a project document before asking AI")
+    db.expunge_all()
+    db.rollback()
     plan = await decompose(data.story.strip(), project.name, documents, data.language)
+    access_after_provider(db, data.project_id, user)
     request = AIRequest(project_id=project.id, user_id=user.id, story=data.story.strip(), response=plan.model_dump(mode="json"))
     db.add(request)
     db.commit()
@@ -106,7 +121,7 @@ def suggest_members(project_id: int, skills: str, user: User = Depends(current_u
     return sorted(result, key=lambda r: (-r["skill_match"], r["workload_percent"] or 0))
 
 @router.post("/requests/{request_id}/confirm", status_code=201, summary="Save reviewed AI plan")
-async def confirm_plan(request_id: int, data: AIConfirm, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def confirm_plan(request_id: int, data: AIConfirm, background_tasks: BackgroundTasks, user: User = Depends(current_user), db: Session = Depends(get_db)):
     request = db.scalar(select(AIRequest).where(AIRequest.id == request_id).with_for_update())
     if not request or request.user_id != user.id:
         raise HTTPException(404, "AI request not found")
@@ -135,5 +150,6 @@ async def confirm_plan(request_id: int, data: AIConfirm, user: User = Depends(cu
     request.confirmed_at = utcnow()
     db.commit()
     for task_id in ids:
-        await hub.publish(project.id, "task.created", project.workspace_id, task_id, user.id, {"source": "AI"})
+        background_tasks.add_task(hub.publish, project.id, "task.created", project.workspace_id, task_id, user.id, {"source": "AI"})
+    db.rollback()
     return {"task_ids": ids}

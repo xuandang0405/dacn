@@ -1,6 +1,6 @@
 # Smart Task Manager
 
-Đồ án quản lý công việc nhóm của Nhóm 3C: workspace, JWT/RBAC, Kanban realtime, skill matrix, workload và trợ lý Gemini dựa trên tài liệu Project. Giao diện VI/EN. Bản tiến độ lần 2 chốt ngày 21/10/2026 (UTC+7).
+Đồ án quản lý công việc nhóm của Nhóm 3C: workspace, JWT/RBAC, Kanban realtime, skill matrix, workload và trợ lý Gemini dựa trên tài liệu Project. Giao diện VI/EN. Bản sửa và kiểm thử website ngày 04/11/2026 (UTC+7): [kết quả và cách chạy lại](TEST_REPORT.md).
 
 [Báo cáo tiến độ lần 2](docs/262701-DACN-01-Nhom3C-BC-02.docx) gồm hiện thực hóa, ảnh chức năng thật, kết quả kiểm thử, phân công và kế hoạch demo.
 
@@ -26,12 +26,12 @@ Một backend worker và một scheduler. Hub/rate limiter nằm trong RAM; chư
 
 | Thành phần | Phiên bản môi trường Docker đã chạy |
 |---|---|
-| Frontend | Next.js 16.3.7, React 19.3.0, TypeScript 5.9.3 |
-| Backend | Python 3.12, FastAPI 0.155.0, SQLAlchemy 2.1.5 |
+| Frontend | Next.js 16.4.5, React 19.3.0, TypeScript 5.9.3 |
+| Backend | Python 3.12, FastAPI 0.162.0, SQLAlchemy 2.1.6 |
 | CSDL | MySQL 8.4.11/InnoDB, migration 0001–0005 |
 | Đối chiếu bổ sung | MariaDB 10.4.32/InnoDB, không thay kết quả MySQL |
 
-Backend khai báo khoảng phiên bản; cần pin bộ dependency trước bản phát hành ổn định. Frontend có package-lock.json.
+Backend dùng requirements.lock để cố định bộ phiên bản đã kiểm tra; frontend dùng package-lock.json. Cài bằng các lệnh trong README để dùng đúng bộ này.
 
 ## Chạy bằng Docker
 
@@ -89,7 +89,9 @@ Không chạy đồng thời với Docker trên cùng cổng 3000/8000. [databas
 | NEXT_PUBLIC_API_URL | API URL nhìn thấy từ browser, được đưa vào lúc build |
 | DOCUMENT_STORAGE_DIR | Kho file riêng; metadata/checksum trong DB |
 | GEMINI_API_KEY, GEMINI_MODEL | Chỉ ở backend; chọn model được tài khoản cấp generateContent |
-| SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM | Gửi email reset mật khẩu |
+| SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, SMTP_STARTTLS | Email reset mật khẩu; STARTTLS mặc định bật |
+| FRONTEND_PORT, BACKEND_PORT | Cổng host của Docker; đổi cả Origin/API URL tương ứng trước build |
+| DB_POOL_SIZE, DB_MAX_OVERFLOW, DB_POOL_TIMEOUT | Pool MySQL, mặc định 20/20/10 giây |
 | DEMO_PASSWORD, SEED_DEMO | Mật khẩu seed và bật/tắt seed tự động |
 
 Thiếu Gemini key, AI trả lỗi dịch vụ rõ ràng; thiếu SMTP, quên mật khẩu trả 503. Chưa có email verification.
@@ -104,7 +106,7 @@ Thiếu Gemini key, AI trả lỗi dịch vụ rõ ràng; thiếu SMTP, quên m�
 - PDF/DOCX/TXT/MD gắn Project; phải có tài liệu trước khi hỏi AI hoặc phân rã. File không lưu BLOB trong DB.
 - WebSocket `/api/v1/ws/projects/{id}` và `/api/v1/ws/notifications`: token ở message đầu; sự kiện phát sau COMMIT.
 
-Workload tránh cộng trùng task/subtask. MAPE hiện dùng estimate hiện tại của task actual > 0, chưa giới hạn Done và chưa đối chiếu baseline AI cố định; chưa dùng để nghiệm thu AI.
+Workload tránh cộng trùng task/subtask. MAPE chỉ lấy task Done có actual > 0, so với snapshot ước lượng **lớn hơn 0 đầu tiên**. Số 0 lúc tạo thẻ chưa được xem là ước lượng. Sửa estimate về sau không đổi mốc này. Nhãn AI là nguồn của ước lượng đã được người dùng duyệt; MAPE này không thay cho đánh giá phản hồi Gemini gốc.
 
 ## Kiểm thử có thể tái lập
 
@@ -114,23 +116,23 @@ Trong backend, `python -m pytest -q` dùng SQLite để kiểm tra nhanh. Kiểm
 python tests/run_verification.py --output-dir ../docs/progress-02/evidence/reproduced
 ```
 
-Runner tạo DB `_verify_` riêng, migration 0001–0005, chạy 76 test, kiểm tra khóa, snapshot, hai WebSocket và tải. Riêng test seed dùng SQLite tạm. Lỗi Gemini được kiểm tra bằng MockTransport, không đo chất lượng mô hình. DB thử nghiệm giữ để đối chiếu. `--skip-load` phù hợp CI. LOAD_CONCURRENCY điều chỉnh request đồng thời, mặc định 100; tổng tài khoản vẫn 100.
+Runner tạo DB `_verify_` riêng, migration 0001–0005, chạy 96 test, kiểm tra khóa, snapshot, hai WebSocket và tải. Riêng test seed dùng SQLite tạm. Lỗi Gemini được kiểm tra bằng MockTransport, không đo chất lượng mô hình. DB thử nghiệm giữ để đối chiếu. `--skip-load` phù hợp CI. LOAD_CONCURRENCY mặc định 100; LOAD_WEBSOCKETS mặc định 2; tổng tài khoản vẫn 100.
 
-Kết quả ngày 21/10: MySQL 8.4 đạt 76/76 test và các kiểm tra khóa, snapshot, hai WebSocket. Bài tải 100 đồng thời gặp ReadTimeout, **chưa đạt mục tiêu tải 100 người dùng**. MariaDB trước bản sửa token đạt 75/75; số đo của môi trường này không thay kết quả MySQL.
+Ngày 04/11, MySQL 8.4 và kiểm tra nhanh SQLite đều đạt 96/96 test. Bài tải API một worker, 100 tài khoản đồng thời, 500 lượt đọc + 500 lượt sửa: không lỗi HTTP; p95 đọc 1150 ms, sửa 1383 ms. Hai client WebSocket nhận đủ 500 cập nhật/client. Đây là phép thử ngắn, chưa phải soak test hay cam kết SLA. [Bằng chứng mới](docs/final-verification).
 
 [Bằng chứng tiến độ 2](docs/progress-02/evidence) gồm JUnit, JSON và ảnh thật. [Kịch bản demo](docs/progress-02/DEMO_SCRIPT.md). [Phân công GitHub](docs/progress-02/GITHUB_WORKFLOW.md).
 
-Browser E2E: cài Playwright trong môi trường kiểm thử riêng, rồi chạy `node scripts/capture_progress_evidence.cjs` khi Docker/seed sẵn sàng. Có thể đặt EVIDENCE_CHROME cho browser cài sẵn. Runner đăng nhập hai vai trò, thao tác task thật, thêm task demo mỗi lần chạy; không mock API, không gọi Gemini trả phí.
+Browser E2E: chạy `docker compose -f docker-compose.yml -f docker/compose.mail.yml up -d --build --wait` để có hộp thư SMTP thử nghiệm tại http://localhost:8025. Trong frontend: `npm ci`, `npx playwright install chromium`, `npm run test:e2e`. Bài kiểm tra tạo hai tài khoản/dữ liệu tổng hợp, dùng API thật, thử PDF/DOCX/TXT, xung đột phiên bản, realtime, VI/EN, mobile và reset mật khẩu qua Mailpit. Mặc định không gọi Gemini; E2E_LIVE_AI=1 chỉ dùng khi đã có khóa và quota. Mailpit không gửi email ra Internet.
 
-Frontend: `npm ci`, `npx tsc --noEmit`, `npm run build`. CI chạy MySQL 8 và frontend build trên PR vào develop/main.
+Frontend: `npm ci`, `npm run lint`, `npm test`, `npx tsc --noEmit`, `npm run build`, `npm audit`. CI kiểm tra MySQL 8, frontend và website/Docker trên PR. Mỗi phân hệ có smoke check tại docker/smoke_*.py; xem TEST_REPORT.md.
 
-Lần chạy CI ngày 21/10 bị GitHub chặn khởi chạy vì vấn đề thanh toán tài khoản. Xem tab Actions để kiểm tra kết quả mới nhất; chỉ merge khi hai job bắt buộc đã đạt. Nhánh integration/mvp chứa bản nền và hướng dẫn làm việc; main/develop chờ review trước khi tích hợp.
+Xem tab Actions của PR để kiểm tra đúng commit mới nhất; chỉ merge sau khi các job đạt và có review thực tế. Nhánh integration/mvp nhận tích hợp hiện tại; main/develop chờ review trước khi nhập bản nền.
 
 ## Những phần còn mở
 
 Gemini thật ngày 13/10: 72 lần gọi, 17 phản hồi thành công, 55 lỗi provider/quota; các phản hồi thành công đều bằng tiếng Anh. Chưa có bộ chấm chất lượng hai người. Xem [quy trình AI](docs/testing/AI_EVALUATION.md) và dữ liệu gốc docs/testing. Không dùng seed/mock test thay thí nghiệm này.
 
-Còn mở: tải MySQL 100 đồng thời, MAPE, chất lượng AI/tiếng Việt, SMTP thật, cloud HTTPS, video dự phòng, soak test và RTO/RPO. Đóng băng tính năng sau demo 06/11/2026. Việc dùng FastAPI/MySQL thay đề cương cũ cần giảng viên xác nhận.
+Còn cần xác nhận bên ngoài: khóa/quota Gemini hợp lệ để đo AI thật, SMTP Internet, triển khai cloud HTTPS, video dự phòng, soak test và RTO/RPO. Luồng mật khẩu đã thử qua SMTP cục bộ. Việc dùng FastAPI/MySQL thay đề cương cũ cần giảng viên xác nhận. Phạm vi tính năng giữ nguyên theo bản đồ án đã chốt.
 
 ## Bảo mật và GitHub
 

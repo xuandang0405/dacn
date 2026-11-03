@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import Field
+from app.schemas import InputModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.db import get_db
@@ -10,9 +11,9 @@ from app.services.invitations import invitation_token, respond
 router = APIRouter(prefix="/invitations", tags=["Invitations"])
 
 
-class InvitationResponse(BaseModel):
-    token: str
-    accept: bool
+class InvitationResponse(InputModel):
+    token: str = Field(min_length=1, max_length=4096)
+    accept: bool = Field(strict=True)
 
 
 @router.get("", summary="My pending workspace invitations")

@@ -85,6 +85,10 @@ export type Analytics = {
   mape: number | null;
   ai_mape: number | null;
   human_mape: number | null;
+  mape_sample_count: number;
+  ai_sample_count: number;
+  human_sample_count: number;
+  mape_basis: "first_positive_committed_estimate";
 };
 export type AIPlan = {
   summary: string;

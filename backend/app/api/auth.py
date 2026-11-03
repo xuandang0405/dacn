@@ -3,7 +3,7 @@ import smtplib
 from datetime import timedelta
 from email.message import EmailMessage
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app.core import settings
@@ -71,6 +71,7 @@ def change_password(data: PasswordChange, user: User = Depends(current_user), db
         raise HTTPException(400, "Current password is incorrect")
     user.password_hash = hash_password(data.new_password)
     user.token_version += 1
+    db.execute(update(PasswordReset).where(PasswordReset.user_id == user.id, PasswordReset.used_at.is_(None)).values(used_at=utcnow()))
     for token in db.scalars(select(RefreshToken).where(RefreshToken.user_id == user.id, RefreshToken.revoked_at.is_(None))):
         token.revoked_at = utcnow()
     db.commit()
@@ -91,7 +92,8 @@ def forgot_password(data: ForgotIn, db: Session = Depends(get_db)):
         message.set_content(f"Reset your password: {settings.frontend_origin}/?reset={raw}\nThis link expires in 30 minutes.")
         try:
             with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=10) as smtp:
-                smtp.starttls()
+                if settings.smtp_starttls:
+                    smtp.starttls()
                 if settings.smtp_user:
                     smtp.login(settings.smtp_user, settings.smtp_password)
                 smtp.send_message(message)
@@ -101,13 +103,16 @@ def forgot_password(data: ForgotIn, db: Session = Depends(get_db)):
 
 @router.post("/reset-password", status_code=204, summary="Set a new password")
 def reset_password(data: ResetIn, db: Session = Depends(get_db)):
-    row = db.scalar(select(PasswordReset).where(PasswordReset.token_hash == token_hash(data.token)).with_for_update())
+    row = db.scalar(select(PasswordReset).where(PasswordReset.token_hash == token_hash(data.token)))
     if not row or row.used_at or row.expires_at < utcnow():
         raise HTTPException(400, "Invalid or expired reset link")
     user = db.scalar(select(User).where(User.id == row.user_id).with_for_update().execution_options(populate_existing=True))
+    row = db.scalar(select(PasswordReset).where(PasswordReset.id == row.id).with_for_update().execution_options(populate_existing=True))
+    if not user or not user.active or row.used_at or row.expires_at < utcnow():
+        raise HTTPException(400, "Invalid or expired reset link")
     user.password_hash = hash_password(data.new_password)
     user.token_version += 1
-    row.used_at = utcnow()
+    db.execute(update(PasswordReset).where(PasswordReset.user_id == user.id, PasswordReset.used_at.is_(None)).values(used_at=utcnow()))
     for token in db.scalars(select(RefreshToken).where(RefreshToken.user_id == user.id, RefreshToken.revoked_at.is_(None))):
         token.revoked_at = utcnow()
     db.commit()

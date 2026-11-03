@@ -49,7 +49,7 @@ async def generate(parts: list[dict], response_schema: dict | None = None) -> st
     if response_schema:
         body["generationConfig"] = {"responseMimeType": "application/json", "responseSchema": response_schema, "temperature": 0.2}
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.gemini_model}:generateContent"
-    async with httpx.AsyncClient(timeout=60) as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(25, connect=5, pool=5, write=10)) as client:
         for attempt in range(3):
             try:
                 response = await client.post(url, headers={"x-goog-api-key": settings.gemini_api_key}, json=body)

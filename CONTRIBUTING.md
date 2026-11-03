@@ -4,12 +4,12 @@
 
 | Thành viên | Phần việc | Nhánh nhận việc | Issue |
 |---|---|---|---|
-| Nguyễn Xuân Đăng | CSDL, migration, seed | `feature/database-seed` | [#1](https://github.com/xuandang0405/dacn/issues/1) |
-| Phạm Minh Dương | Backend, phân quyền, AI | `feature/backend-ai` | [#2](https://github.com/xuandang0405/dacn/issues/2) |
-| Phạm Tấn Đạt | Realtime, kiểm thử | `feature/realtime-tests` | [#3](https://github.com/xuandang0405/dacn/issues/3) |
-| Trần Đăng Khoa | Frontend, ghép API, bàn giao | `feature/frontend-integration` | [#4](https://github.com/xuandang0405/dacn/issues/4) |
+| Nguyễn Xuân Đăng | Setup chung + API/frontend/Docker tài khoản, workspace | `setup/platform` | [#14](https://github.com/xuandang0405/dacn/issues/14) |
+| Phạm Minh Dương | API/frontend/Docker AI và tài liệu | `feature/ai-documents` | [#23](https://github.com/xuandang0405/dacn/issues/23) |
+| Phạm Tấn Đạt | API/frontend/Docker Project, Task, Kanban, realtime | `feature/task-kanban` | [#15](https://github.com/xuandang0405/dacn/issues/15) |
+| Trần Đăng Khoa | API/frontend/Docker Skills, Workload, Analytics | `feature/skills-analytics` | [#18](https://github.com/xuandang0405/dacn/issues/18) |
 
-Mỗi người nhận việc trong issue, đọc điều kiện nghiệm thu, thực hiện thay đổi và tự push bằng tài khoản của mình. Tên trong bảng là phân công; thành viên cần quyền Write trong repository trước khi push. Dương cần chấp nhận lời mời; Đạt và Khoa được chủ repository bổ sung sau.
+Mỗi người nhận việc trong issue, đọc điều kiện nghiệm thu, thực hiện thay đổi và tự push bằng tài khoản của mình. Tên trong bảng là phân công; thành viên cần quyền Write trước khi push. Đăng và Dương đã có quyền; Đạt/Khoa được chủ repository bổ sung sau.
 
 Trong lúc chưa có quyền Write, có thể fork repository, push nhánh vào fork của mình rồi mở PR về `xuandang0405/dacn` với base `integration/mvp`.
 
@@ -29,10 +29,10 @@ cd dacn
 git config user.name "Họ tên của bạn"
 git config user.email "Email GitHub đã xác minh của bạn"
 git fetch origin
-git switch --track origin/feature/backend-ai
+git switch --track origin/feature/ai-documents
 ```
 
-Nếu đã có nhánh ở máy, dùng `git switch feature/backend-ai` rồi `git pull --ff-only`. Khi cần lấy thay đổi chung, chạy `git fetch origin` và `git merge origin/integration/mvp`; xử lý xung đột trước khi push. Không dùng tài khoản, email hoặc commit của người khác để ghi nhận phần việc của mình.
+Nếu đã có nhánh ở máy, dùng `git switch feature/ai-documents` rồi `git pull --ff-only`. Khi cần lấy thay đổi chung, chạy `git fetch origin` và `git merge origin/integration/mvp`; xử lý xung đột trước khi push. Không dùng tài khoản, email hoặc commit của người khác để ghi nhận phần việc của mình.
 
 ## Push phần việc
 
@@ -41,8 +41,8 @@ git status
 # Chỉ chọn các tệp thuộc phần việc đã kiểm tra.
 git add path/to/changed-file
 git diff --cached
-git commit -m "fix: mo ta thay doi; refs #2"
-git push -u origin feature/backend-ai
+git commit -m "fix: mo ta thay doi; refs #23"
+git push -u origin feature/ai-documents
 ```
 
 Không dùng `git add .` khi chưa rà soát tệp cấu hình và dữ liệu. Không commit `.env`, khóa dịch vụ, token, database, tài liệu người dùng, `.venv`, `node_modules` hoặc thư mục build. Không force push lên nhánh chung.

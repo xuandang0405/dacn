@@ -1,0 +1,49 @@
+#1 [internal] load local bake definitions
+#1 reading from stdin 557B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 198B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.12-slim
+#3 DONE 0.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 115B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 6.10kB done
+#5 DONE 0.0s
+
+#6 [1/5] FROM docker.io/library/python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1
+#6 resolve docker.io/library/python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1 0.0s done
+#6 DONE 0.0s
+
+#7 [2/5] WORKDIR /code
+#7 CACHED
+
+#8 [3/5] COPY requirements.txt requirements.lock ./
+#8 CACHED
+
+#9 [4/5] RUN pip install --no-cache-dir -r requirements.txt
+#9 CACHED
+
+#10 [5/5] COPY . .
+#10 CACHED
+
+#11 exporting to image
+#11 exporting layers done
+#11 exporting manifest sha256:58b86d676f7a397a57ecbbb2db73d77af5b3d1c92268c8f5647cd4c3781b3072 0.0s done
+#11 exporting config sha256:b65fe6cb4565b9d4ffce3c7b0e77ae41606d5051ed9751c574722d5e6a7e4619 0.0s done
+#11 exporting attestation manifest sha256:ea260aa4d2e207de05eef3777ec746317fb86b4081c31267702d773e6a2cc7dd
+#11 exporting attestation manifest sha256:ea260aa4d2e207de05eef3777ec746317fb86b4081c31267702d773e6a2cc7dd 0.0s done
+#11 exporting manifest list sha256:593296dbad42eb3227d8bba2f47933a6d82ed10c430c6ea4a54cc1161b364a59 done
+#11 naming to docker.io/library/dacn-finalcheck-ai-checks:latest done
+#11 unpacking to docker.io/library/dacn-finalcheck-ai-checks:latest done
+#11 DONE 0.1s
+
+#12 resolving provenance for metadata file
+#12 DONE 0.0s
+{"module": "ai-documents", "source_revision": "working-tree", "started_utc": "2026-11-03T21:43:54.471305+00:00", "finished_utc": "2026-11-03T21:43:54.740389+00:00", "real_http": true, "external_ai_called": false, "checks": [{"check": "POST /auth/login", "passed": true, "http_status": 200}, {"check": "POST /workspaces", "passed": true, "http_status": 201}, {"check": "POST /workspaces/5/projects", "passed": true, "http_status": 201}, {"check": "GET /projects/7/columns", "passed": true, "http_status": 200}, {"check": "GET /ai/projects/7/documents", "passed": true, "http_status": 200}, {"check": "No documents initially", "passed": true}, {"check": "POST /ai/projects/7/query", "passed": true, "http_status": 409}, {"check": "POST /ai/decompose-task", "passed": true, "http_status": 409}, {"check": "POST /ai/projects/7/documents", "passed": true, "http_status": 415}, {"check": "POST /ai/projects/7/documents", "passed": true, "http_status": 201}, {"check": "POST /ai/projects/7/documents", "passed": true, "http_status": 201}, {"check": "POST /ai/projects/7/documents", "passed": true, "http_status": 201}, {"check": "POST /ai/projects/7/documents", "passed": true, "http_status": 409}, {"check": "POST /ai/projects/7/query", "passed": true, "http_status": 422}, {"check": "POST /auth/login", "passed": true, "http_status": 200}, {"check": "GET /ai/projects/7/documents", "passed": true, "http_status": 404}, {"check": "DELETE /ai/documents/1", "passed": true, "http_status": 404}, {"check": "DELETE /ai/documents/1", "passed": true, "http_status": 204}, {"check": "GET /ai/projects/7/documents", "passed": true, "http_status": 200}, {"check": "Deleting a document frees a slot", "passed": true}]}

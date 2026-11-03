@@ -190,7 +190,7 @@ class SkillIn(InputModel):
 
 class SkillLevelIn(InputModel):
     user_id: PositiveId
-    level: int = Field(strict=True, ge=1, le=5)
+    level: int = Field(strict=True, ge=0, le=5)
 
 class CommentIn(InputModel):
     content: str = Field(min_length=1, max_length=5000)

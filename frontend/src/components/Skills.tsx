@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { useLanguage } from "@/lib/language";
+import { enumLabel, useLanguage } from "@/lib/language";
 import type { Member, SkillMatrix, Workspace } from "@/lib/types";
 
 export default function Skills({
@@ -13,16 +13,18 @@ export default function Skills({
   actorId: number;
   membersOnly?: boolean;
 }) {
-  const { t } = useLanguage();
+  const { language, t, message: messageText } = useLanguage();
   const [members, setMembers] = useState<Member[]>([]);
   const [matrix, setMatrix] = useState<SkillMatrix>({ skills: [], levels: [] });
   const [email, setEmail] = useState("");
   const [skill, setSkill] = useState("");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
   const role = members.find((m) => m.user_id === actorId)?.role;
   const manager = role === "OWNER" || role === "ADMIN";
 
-  async function load() {
+  const load = useCallback(async () => {
     try {
       const [m, s] = await Promise.all([
         api.get<Member[]>(`/workspaces/${workspace.id}/members`),
@@ -30,54 +32,59 @@ export default function Skills({
       ]);
       setMembers(m);
       setMatrix(s);
+      setError("");
     } catch (e) {
       setError((e as Error).message);
     }
-  }
+  }, [workspace.id]);
   useEffect(() => {
     load();
-  }, [workspace.id]);
+  }, [load]);
+
+  async function mutate(action: () => Promise<void>) {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      await action();
+      await load();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function invite(e: React.FormEvent) {
     e.preventDefault();
-    try {
+    await mutate(async () => {
       await api.post(`/workspaces/${workspace.id}/members`, {
         email,
         role: "MEMBER",
       });
       setEmail("");
-      load();
-    } catch (e) {
-      setError((e as Error).message);
-    }
+      setMessage("Invitation sent. Waiting for acceptance.");
+    });
   }
   async function addSkill(e: React.FormEvent) {
     e.preventDefault();
-    try {
+    await mutate(async () => {
       await api.post(`/workspaces/${workspace.id}/skills`, { name: skill });
       setSkill("");
-      load();
-    } catch (e) {
-      setError((e as Error).message);
-    }
+    });
   }
   async function level(skill_id: number, user_id: number, value: number) {
-    try {
+    await mutate(async () => {
       await api.put(`/skills/${skill_id}/members`, { user_id, level: value });
-      load();
-    } catch (e) {
-      setError((e as Error).message);
-    }
+    });
   }
   async function changeRole(user_id: number, value: string) {
-    try {
+    await mutate(async () => {
       await api.patch(`/workspaces/${workspace.id}/members/${user_id}`, {
         role: value,
       });
-      load();
-    } catch (e) {
-      setError((e as Error).message);
-    }
+    });
   }
   async function remove(user_id: number) {
     if (
@@ -89,12 +96,9 @@ export default function Skills({
       )
     )
       return;
-    try {
+    await mutate(async () => {
       await api.delete(`/workspaces/${workspace.id}/members/${user_id}`);
-      load();
-    } catch (e) {
-      setError((e as Error).message);
-    }
+    });
   }
 
   return (
@@ -118,8 +122,20 @@ export default function Skills({
         </p>
       </div>
       {error && (
-        <div className="error" onClick={() => setError("")}>
-          {error}
+        <div className="error" role="alert">
+          {messageText(error)}
+          <button
+            type="button"
+            onClick={() => setError("")}
+            aria-label={t("Đóng thông báo", "Dismiss message")}
+          >
+            ×
+          </button>
+        </div>
+      )}
+      {message && (
+        <div className="success" role="status">
+          {messageText(message)}
         </div>
       )}
       <div className="panel">
@@ -139,8 +155,10 @@ export default function Skills({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            <button className="button primary">
-              {t("Mời tài khoản", "Invite account")}
+            <button type="submit" className="button primary" disabled={busy}>
+              {busy
+                ? t("Đang xử lý…", "Working…")
+                : t("Mời tài khoản", "Invite account")}
             </button>
           </form>
         )}
@@ -158,20 +176,25 @@ export default function Skills({
                 <select
                   aria-label={`${t("Vai trò", "Role")} ${m.name}`}
                   value={m.role}
+                  disabled={busy}
                   onChange={(e) => changeRole(m.user_id, e.target.value)}
                 >
-                  <option>ADMIN</option>
-                  <option>MEMBER</option>
+                  <option value="ADMIN">{enumLabel("ADMIN", language)}</option>
+                  <option value="MEMBER">
+                    {enumLabel("MEMBER", language)}
+                  </option>
                 </select>
               ) : (
-                <span className="badge">{m.role}</span>
+                <span className="badge">{enumLabel(m.role, language)}</span>
               )}
               {manager &&
                 m.role !== "OWNER" &&
                 (role === "OWNER" || m.role === "MEMBER") && (
                   <button
+                    type="button"
                     className="button danger"
                     onClick={() => remove(m.user_id)}
+                    disabled={busy}
                   >
                     {t("Xóa", "Remove")}
                   </button>
@@ -184,7 +207,9 @@ export default function Skills({
         <div className="panel">
           <div className="panel-header">
             <div>
-              <h3>{t("Bảng kỹ năng chuyên môn", "Skill proficiency matrix")}</h3>
+              <h3>
+                {t("Bảng kỹ năng chuyên môn", "Skill proficiency matrix")}
+              </h3>
               <p className="muted">
                 {t(
                   "Đánh giá mức độ từ 1–5. Chỉ Quản trị viên có quyền cập nhật.",
@@ -197,11 +222,14 @@ export default function Skills({
             <form className="inline-form" onSubmit={addSkill}>
               <input
                 required
+                maxLength={100}
                 placeholder={t("Thêm kỹ năng mới", "Add a new skill")}
                 value={skill}
                 onChange={(e) => setSkill(e.target.value)}
               />
-              <button className="button primary">+ {t("Thêm", "Add")}</button>
+              <button type="submit" className="button primary" disabled={busy}>
+                + {t("Thêm", "Add")}
+              </button>
             </form>
           )}
           <div className="table-scroll">
@@ -221,7 +249,7 @@ export default function Skills({
                     {matrix.skills.map((s) => (
                       <td key={s.id}>
                         <select
-                          disabled={!manager}
+                          disabled={!manager || busy}
                           aria-label={`${s.name} - ${m.name}`}
                           value={
                             matrix.levels.find(

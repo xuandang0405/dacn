@@ -1,11 +1,11 @@
 from datetime import date
 from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models import Activity, KanbanColumn, Notification, Project, Task, TaskRequirement, User
-from app.schemas import TaskIn, TaskMove, TaskOut, TaskPatch
+from app.schemas import ProjectOut, TaskIn, TaskMove, TaskOut, TaskPatch
 from app.security import current_user, project_access, validate_assignee
 from app.services.task_transactions import lock_columns, lock_task, siblings, reorder, snapshot
 
@@ -19,6 +19,14 @@ def task_access(db: Session, task_id: int, user: User) -> tuple[Task, Project]:
 
 def event_activity(db: Session, project: Project, actor: User, action: str, task_id: int, detail: dict | None = None):
     db.add(Activity(project_id=project.id, actor_id=actor.id, action=action, entity="task", entity_id=task_id, detail=detail or {}))
+
+
+def event_result(db: Session, task: Task, project: Project):
+    # Copy response fields in the DB worker, then return its read connection
+    # before asynchronous WebSocket authorization opens independent sessions.
+    result = TaskOut.model_validate(task), ProjectOut.model_validate(project)
+    db.rollback()
+    return result
 
 
 def reload_after_lock(db: Session, task_id: int) -> Task:
@@ -44,7 +52,8 @@ def list_tasks(project_id: int, assignee_id: int | None = None, column_id: int |
     if due_before:
         stmt = stmt.where(Task.due_date <= due_before)
     total = db.scalar(select(func.count()).select_from(stmt.subquery()))
-    sort_col = {"position": Task.position, "due_date": Task.due_date, "created_at": Task.created_at, "priority": Task.priority}[sort]
+    priority_order = case({"LOW": 0, "MEDIUM": 1, "HIGH": 2, "URGENT": 3}, value=Task.priority, else_=4)
+    sort_col = {"position": Task.position, "due_date": Task.due_date, "created_at": Task.created_at, "priority": priority_order}[sort]
     ordering = sort_col.desc() if direction == "desc" else sort_col.asc()
     rows = db.scalars(stmt.order_by(ordering, Task.id).offset((page - 1) * size).limit(size)).all()
     return {"items": [TaskOut.model_validate(row).model_dump(mode="json") for row in rows], "total": total, "page": page, "size": size}
@@ -69,7 +78,7 @@ def create_task(project_id: int, data: TaskIn, user: User = Depends(current_user
         db.add(Notification(user_id=task.assignee_id, workspace_id=p.workspace_id, kind="task_assigned", message=f"Assigned: {task.title}", entity_id=task.id))
     db.commit()
     db.refresh(task)
-    return task, p
+    return event_result(db, task, p)
 
 def get_task(task_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
     return task_access(db, task_id, user)[0]
@@ -109,7 +118,8 @@ def update_task(task_id: int, data: TaskPatch, user: User = Depends(current_user
         db.add(Notification(user_id=task.assignee_id, workspace_id=p.workspace_id, kind="task_assigned", message=f"Assigned: {task.title}", entity_id=task.id))
     db.commit()
     db.refresh(task)
-    return task, p, assignment_changed
+    task_out, project_out = event_result(db, task, p)
+    return task_out, project_out, assignment_changed
 
 def move_task(task_id: int, data: TaskMove, user: User = Depends(current_user), db: Session = Depends(get_db)):
     task, p = task_access(db, task_id, user)
@@ -140,7 +150,7 @@ def move_task(task_id: int, data: TaskMove, user: User = Depends(current_user), 
         event_activity(db, p, user, "task.completed", task.id)
     db.commit()
     db.refresh(task)
-    return task, p
+    return event_result(db, task, p)
 
 def delete_task(task_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
     task, p = task_access(db, task_id, user)
@@ -154,5 +164,7 @@ def delete_task(task_id: int, user: User = Depends(current_user), db: Session = 
     reorder(sorted(siblings(db, old_column), key=lambda row: (row.position, row.id)))
     event_activity(db, p, user, "task.deleted", task_id)
     db.commit()
-    return p
+    result = ProjectOut.model_validate(p)
+    db.rollback()
+    return result
 
