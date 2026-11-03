@@ -1,8 +1,9 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CalendarDays, Clock3, Plus, Settings2, X } from "lucide-react";
-import { api, base, getToken } from "@/lib/api";
+import { api, ApiError, base, getToken } from "@/lib/api";
 import { enumLabel, useLanguage } from "@/lib/language";
+import { formatTimestamp } from "@/lib/dates";
 import type {
   Column,
   Member,
@@ -39,11 +40,13 @@ type Activity = {
 export default function Board({
   project,
   workspace,
+  actorId,
   onProjectChange,
   onDeleted,
 }: {
   project: Project;
   workspace: Workspace;
+  actorId: number;
   onProjectChange: (p: Project) => void;
   onDeleted: () => void;
 }) {
@@ -66,35 +69,58 @@ export default function Board({
     project.description,
   );
   const [projectStatus, setProjectStatus] = useState(project.status);
-  const load = useCallback(async () => {
-    try {
-      const [cols, people, pm] = await Promise.all([
-        api.get<Column[]>(`/projects/${project.id}/columns`),
-        api.get<Member[]>(`/workspaces/${workspace.id}/members`),
-        api.get<number[]>(`/projects/${project.id}/members`),
-      ]);
-      const rows: Task[] = [];
-      let page = 1,
-        total = 0;
-      do {
-        const data = await api.get<Paged<Task>>(
-          `/projects/${project.id}/tasks?size=100&page=${page}`,
+  const [refreshKey, setRefreshKey] = useState(0);
+  const loadSequence = useRef(0);
+  const deletedCallback = useRef(onDeleted);
+  useEffect(() => {
+    deletedCallback.current = onDeleted;
+  }, [onDeleted]);
+  const role = members.find((member) => member.user_id === actorId)?.role;
+  const canManage = role === "OWNER" || role === "ADMIN";
+  const eligibleMembers = members.filter(
+    (member) =>
+      member.role !== "MEMBER" || projectMembers.includes(member.user_id),
+  );
+  const load = useCallback(
+    async (clearError = true) => {
+      const sequence = ++loadSequence.current;
+      try {
+        const [cols, people, pm] = await Promise.all([
+          api.get<Column[]>(`/projects/${project.id}/columns`),
+          api.get<Member[]>(`/workspaces/${workspace.id}/members`),
+          api.get<number[]>(`/projects/${project.id}/members`),
+        ]);
+        const rows: Task[] = [];
+        let page = 1,
+          total = 0;
+        do {
+          const data = await api.get<Paged<Task>>(
+            `/projects/${project.id}/tasks?size=100&page=${page}`,
+          );
+          rows.push(...data.items);
+          total = data.total;
+          page++;
+        } while (rows.length < total && page < 100);
+        if (sequence !== loadSequence.current) return;
+        setColumns(cols);
+        setTasks(rows);
+        setMembers(people);
+        setProjectMembers(pm);
+        setSelected((current) =>
+          current && rows.some((row) => row.id === current.id) ? current : null,
         );
-        rows.push(...data.items);
-        total = data.total;
-        page++;
-      } while (rows.length < total && page < 100);
-      setColumns(cols);
-      setTasks(rows);
-      setMembers(people);
-      setProjectMembers(pm);
-      setError("");
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  }, [project.id, workspace.id]);
+        if (clearError) setError("");
+      } catch (e) {
+        if (sequence === loadSequence.current) setError((e as Error).message);
+      }
+    },
+    [project.id, workspace.id],
+  );
   useEffect(() => {
     load();
+    return () => {
+      loadSequence.current++;
+    };
   }, [load]);
   useEffect(() => {
     let ws: WebSocket | undefined;
@@ -108,9 +134,24 @@ export default function Board({
       ws.onopen = () => ws?.send(token);
       ws.onmessage = (e) => {
         const message = JSON.parse(e.data);
-        if (message.event !== "connected") load();
+        if (message.event !== "connected") {
+          setRefreshKey((value) => value + 1);
+          load(false);
+        }
       };
-      ws.onclose = () => {
+      ws.onclose = async () => {
+        if (closed) return;
+        try {
+          await api.get<Project>(`/projects/${project.id}`);
+        } catch (error) {
+          if (
+            error instanceof ApiError &&
+            (error.status === 403 || error.status === 404)
+          ) {
+            if (!closed) deletedCallback.current();
+            return;
+          }
+        }
         if (!closed) setTimeout(connect, 2500);
       };
     };
@@ -122,7 +163,8 @@ export default function Board({
   }, [project.id, load]);
   async function createTask(e: React.FormEvent) {
     e.preventDefault();
-    if (!newTitle.trim()) return;
+    if (!newTitle.trim() || busy) return;
+    setError("");
     setBusy(true);
     try {
       await api.post(`/projects/${project.id}/tasks`, {
@@ -141,6 +183,7 @@ export default function Board({
     }
   }
   async function move(task: Task, column_id: number, position: number) {
+    if (busy) return;
     setBusy(true);
     try {
       await api.post(`/tasks/${task.id}/move`, {
@@ -150,8 +193,8 @@ export default function Board({
       });
       await load();
     } catch (e) {
+      await load(false);
       setError((e as Error).message);
-      await load();
     } finally {
       setBusy(false);
     }
@@ -170,11 +213,38 @@ export default function Board({
     }
   }
   async function addMember(userId: number) {
+    if (busy) return;
+    setBusy(true);
+    setError("");
     try {
       await api.post(`/projects/${project.id}/members/${userId}`);
       load();
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function removeMember(userId: number) {
+    if (
+      busy ||
+      !confirm(
+        tr(
+          "Bỏ thành viên khỏi dự án? Các công việc được giao sẽ trở về chưa phân công.",
+          "Remove this project member? Their tasks will become unassigned.",
+        ),
+      )
+    )
+      return;
+    setBusy(true);
+    setError("");
+    try {
+      await api.delete(`/projects/${project.id}/members/${userId}`);
+      await load();
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setBusy(false);
     }
   }
   async function saveProject(e: React.FormEvent) {
@@ -237,12 +307,15 @@ export default function Board({
           </p>
         </div>
         <div className="board-actions">
-          <button
-            className="button subtle"
-            onClick={() => setSettingsOpen(!settingsOpen)}
-          >
-            <Settings2 size={15} /> {tr("Cài đặt dự án", "Project settings")}
-          </button>
+          {canManage && (
+            <button
+              type="button"
+              className="button subtle"
+              onClick={() => setSettingsOpen(!settingsOpen)}
+            >
+              <Settings2 size={15} /> {tr("Cài đặt dự án", "Project settings")}
+            </button>
+          )}
           <div className="member-avatars">
             {members
               .filter((m) => projectMembers.includes(m.user_id))
@@ -253,25 +326,50 @@ export default function Board({
                 </span>
               ))}
           </div>
-          <select
-            aria-label={tr("Thêm thành viên dự án", "Add project member")}
-            value=""
-            onChange={(e) => addMember(Number(e.target.value))}
-          >
-            <option value="">+ {tr("Thành viên", "Member")}</option>
-            {members
-              .filter((m) => !projectMembers.includes(m.user_id))
-              .map((m) => (
-                <option key={m.user_id} value={m.user_id}>
-                  {m.name}
-                </option>
-              ))}
-          </select>
+          {canManage && (
+            <select
+              disabled={busy}
+              aria-label={tr("Thêm thành viên dự án", "Add project member")}
+              value=""
+              onChange={(e) => addMember(Number(e.target.value))}
+            >
+              <option value="">+ {tr("Thành viên", "Member")}</option>
+              {members
+                .filter((m) => !projectMembers.includes(m.user_id))
+                .map((m) => (
+                  <option key={m.user_id} value={m.user_id}>
+                    {m.name}
+                  </option>
+                ))}
+            </select>
+          )}
         </div>
       </div>
-      {settingsOpen && (
+      {settingsOpen && canManage && (
         <form className="panel project-settings" onSubmit={saveProject}>
           <h3>{tr("Cài đặt dự án", "Project settings")}</h3>
+          <div className="member-list">
+            {members
+              .filter((member) => projectMembers.includes(member.user_id))
+              .map((member) => (
+                <div key={member.user_id}>
+                  <span>{member.name}</span>
+                  <span className="badge">
+                    {enumLabel(member.role, language)}
+                  </span>
+                  {member.role === "MEMBER" && (
+                    <button
+                      type="button"
+                      className="button danger"
+                      disabled={busy}
+                      onClick={() => removeMember(member.user_id)}
+                    >
+                      {tr("Bỏ khỏi dự án", "Remove from project")}
+                    </button>
+                  )}
+                </div>
+              ))}
+          </div>
           <div className="field-grid">
             <label>
               {tr("Tên dự án", "Project name")}
@@ -305,7 +403,7 @@ export default function Board({
             />
           </label>
           <div className="drawer-actions">
-            <button className="button primary">
+            <button type="submit" className="button primary">
               {tr("Lưu thay đổi", "Save changes")}
             </button>
             <button
@@ -320,7 +418,9 @@ export default function Board({
       )}
       {error && (
         <div className="error">
-          <button onClick={() => setError("")}>×</button>
+          <button type="button" onClick={() => setError("")}>
+            ×
+          </button>
           {messageText(error)}
         </div>
       )}
@@ -332,7 +432,7 @@ export default function Board({
             placeholder={tr("Tên công việc mới...", "New task title...")}
             required
           />
-          <button className="button primary" disabled={busy}>
+          <button type="submit" className="button primary" disabled={busy}>
             <Plus size={16} /> {tr("Tạo công việc", "Create task")}
           </button>
         </form>
@@ -378,7 +478,8 @@ export default function Board({
             .filter((t) => t.column_id === col.id)
             .sort((a, b) => a.position - b.position);
           return (
-            <div
+            <section
+              aria-label={enumLabel(col.name, language)}
               className="kanban-column"
               key={col.id}
               onDragOver={(e) => e.preventDefault()}
@@ -392,14 +493,15 @@ export default function Board({
             >
               <div className="column-head">
                 <span className={`column-dot ${col.is_done ? "done" : ""}`} />
-                <strong>{col.name}</strong>
+                <strong>{enumLabel(col.name, language)}</strong>
                 <span className="count">
                   [{String(items.length).padStart(2, "0")}]
                 </span>
               </div>
               <div className="column-body">
                 {items.map((t, index) => (
-                  <div
+                  <button
+                    type="button"
                     key={t.id}
                     draggable={!query && !priorityFilter && !assigneeFilter}
                     onDragStart={(e) =>
@@ -450,7 +552,7 @@ export default function Board({
                           ?.name[0]?.toUpperCase() || "—"}
                       </span>
                     </div>
-                  </div>
+                  </button>
                 ))}
                 {!items.length && (
                   <div className="column-empty">
@@ -463,32 +565,35 @@ export default function Board({
                   </div>
                 )}
               </div>
-            </div>
+            </section>
           );
         })}
-        <div className="kanban-add">
-          <form onSubmit={addColumn}>
-            <input
-              value={newColumn}
-              onChange={(e) => setNewColumn(e.target.value)}
-              placeholder={tr("Tên cột mới", "New column name")}
-              required
-            />
-            <button className="button subtle">
-              + {tr("Thêm cột", "Add column")}
-            </button>
-          </form>
-        </div>
+        {canManage && (
+          <div className="kanban-add">
+            <form onSubmit={addColumn}>
+              <input
+                value={newColumn}
+                onChange={(e) => setNewColumn(e.target.value)}
+                placeholder={tr("Tên cột mới", "New column name")}
+                required
+              />
+              <button type="submit" className="button subtle">
+                + {tr("Thêm cột", "Add column")}
+              </button>
+            </form>
+          </div>
+        )}
       </div>
       {selected && (
         <TaskPanel
+          key={selected.id}
           projectId={project.id}
           task={tasks.find((t) => t.id === selected.id) || selected}
-          members={members}
+          columns={columns}
+          members={eligibleMembers}
+          refreshKey={refreshKey}
           onClose={() => setSelected(null)}
-          onChanged={() => {
-            load();
-          }}
+          onChanged={load}
         />
       )}
     </>
@@ -498,15 +603,19 @@ export default function Board({
 function TaskPanel({
   projectId,
   task,
+  columns,
   members,
+  refreshKey,
   onClose,
   onChanged,
 }: {
   projectId: number;
   task: Task;
+  columns: Column[];
   members: Member[];
+  refreshKey: number;
   onClose: () => void;
-  onChanged: () => void;
+  onChanged: () => Promise<void>;
 }) {
   const { language, t: tr, message: messageText } = useLanguage();
   const [title, setTitle] = useState(task.title);
@@ -524,7 +633,18 @@ function TaskPanel({
   const [newComment, setNewComment] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  async function load() {
+  const [dirty, setDirty] = useState(false);
+  const [draftVersion, setDraftVersion] = useState(task.version);
+  const [conflict, setConflict] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) dialog.showModal();
+    return () => {
+      dialog?.close();
+    };
+  }, []);
+  const load = useCallback(async () => {
     try {
       const [s, c, a, skills] = await Promise.all([
         api.get<Subtask[]>(`/tasks/${task.id}/subtasks`),
@@ -539,11 +659,12 @@ function TaskPanel({
     } catch (e) {
       setError((e as Error).message);
     }
-  }
-  useEffect(() => {
-    load();
   }, [task.id]);
   useEffect(() => {
+    load();
+  }, [load, refreshKey]);
+  useEffect(() => {
+    if (dirty) return;
     setTitle(task.title);
     setDescription(task.description);
     setPriority(task.priority);
@@ -551,9 +672,13 @@ function TaskPanel({
     setEstimated(task.estimated_hours);
     setActual(task.actual_hours);
     setDue(task.due_date || "");
-  }, [task.version]);
+    setDraftVersion(task.version);
+  }, [task, dirty]);
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
+    setError("");
+    setConflict(false);
     setBusy(true);
     try {
       await api.patch(`/tasks/${task.id}`, {
@@ -564,10 +689,12 @@ function TaskPanel({
         estimated_hours: Number(estimated),
         actual_hours: Number(actual),
         due_date: due || null,
-        version: task.version,
+        version: draftVersion,
       });
-      onChanged();
+      await onChanged();
+      setDirty(false);
     } catch (e) {
+      setConflict(e instanceof ApiError && e.status === 409);
       setError((e as Error).message);
     } finally {
       setBusy(false);
@@ -626,7 +753,13 @@ function TaskPanel({
     }
   }
   return (
-    <div
+    <dialog
+      ref={dialogRef}
+      aria-label={tr("Chi tiết công việc", "Task details")}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
       className="drawer-overlay"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -635,10 +768,13 @@ function TaskPanel({
       <div className="drawer">
         <div className="drawer-top">
           <span className="eyebrow">
-            PROJECT № {String(projectId).padStart(2, "0")} // TASK № TSK-
+            {"PROJECT № "}
+            {String(projectId).padStart(2, "0")}
+            {" // TASK № TSK-"}
             {task.id} · REV {task.version} · EST: {task.estimate_source}
           </span>
           <button
+            type="button"
             className="icon-button"
             onClick={onClose}
             aria-label={tr("Đóng", "Close")}
@@ -647,7 +783,59 @@ function TaskPanel({
           </button>
         </div>
         {error && <div className="error">{messageText(error)}</div>}
-        <form onSubmit={save}>
+        <label>
+          {tr("Chuyển sang cột", "Move to column")}
+          <select
+            value={task.column_id}
+            disabled={busy || dirty}
+            onChange={async (event) => {
+              const column_id = Number(event.target.value);
+              setBusy(true);
+              setError("");
+              try {
+                await api.post(`/tasks/${task.id}/move`, {
+                  column_id,
+                  position: 0,
+                  version: draftVersion,
+                });
+                await onChanged();
+              } catch (error) {
+                setError((error as Error).message);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            {columns.map((column) => (
+              <option key={column.id} value={column.id}>
+                {enumLabel(column.name, language)}
+              </option>
+            ))}
+          </select>
+        </label>
+        {dirty && (
+          <p className="muted">
+            {tr(
+              "Lưu bản sửa trước khi chuyển cột.",
+              "Save your edits before moving the task.",
+            )}
+          </p>
+        )}
+        {conflict && (
+          <button
+            type="button"
+            className="button subtle"
+            onClick={async () => {
+              await onChanged();
+              setDirty(false);
+              setConflict(false);
+              setError("");
+            }}
+          >
+            {tr("Bỏ bản sửa và tải dữ liệu mới", "Discard draft and reload")}
+          </button>
+        )}
+        <form onSubmit={save} onChange={() => setDirty(true)}>
           <label>
             {tr("Tiêu đề", "Title")}
             <input
@@ -722,7 +910,7 @@ function TaskPanel({
             </label>
           </div>
           <div className="drawer-actions">
-            <button className="button primary" disabled={busy}>
+            <button type="submit" className="button primary" disabled={busy}>
               {tr("Lưu thay đổi", "Save changes")}
             </button>
             <button className="button danger" type="button" onClick={remove}>
@@ -763,7 +951,9 @@ function TaskPanel({
               onChange={(e) => setNewSub(e.target.value)}
               placeholder={tr("Tên việc con mới...", "New subtask title...")}
             />
-            <button className="button subtle">+ {tr("Thêm", "Add")}</button>
+            <button type="submit" className="button subtle">
+              + {tr("Thêm", "Add")}
+            </button>
           </form>
         </section>
         <section className="drawer-section">
@@ -778,9 +968,7 @@ function TaskPanel({
                   {members.find((m) => m.user_id === c.author_id)?.name ||
                     `User #${c.author_id}`}{" "}
                   ·{" "}
-                  {new Date(c.created_at).toLocaleString(
-                    language === "vi" ? "vi-VN" : "en-US",
-                  )}
+                  {formatTimestamp(c.created_at, language)}
                 </small>
                 <p>{c.content}</p>
               </div>
@@ -797,7 +985,7 @@ function TaskPanel({
                 "Write a comment. Mention with @username...",
               )}
             />
-            <button className="button primary">
+            <button type="submit" className="button primary">
               {tr("Gửi bình luận", "Post comment")}
             </button>
           </form>
@@ -809,14 +997,12 @@ function TaskPanel({
               <div key={a.id}>
                 <span className="activity-dot" />
                 <span>
-                  <strong>{a.action}</strong>
+                  <strong>{enumLabel(a.action, language)}</strong>
                   <small>
                     {members.find((m) => m.user_id === a.actor_id)?.name ||
                       `User #${a.actor_id}`}{" "}
                     ·{" "}
-                    {new Date(a.created_at).toLocaleString(
-                      language === "vi" ? "vi-VN" : "en-US",
-                    )}
+                    {formatTimestamp(a.created_at, language)}
                   </small>
                 </span>
               </div>
@@ -824,6 +1010,6 @@ function TaskPanel({
           </div>
         </section>
       </div>
-    </div>
+    </dialog>
   );
 }

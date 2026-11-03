@@ -94,6 +94,7 @@ export default function MyTasks({
       <div className="project-list">
         {rows.map(({ task, project }) => (
           <button
+            type="button"
             className="project-row"
             key={task.id}
             onClick={() => onOpenProject(project)}

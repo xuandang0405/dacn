@@ -15,8 +15,16 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { api, base, getToken, logout, refresh, SESSION_EVENT } from "@/lib/api";
-import type { Project, User, Workspace } from "@/lib/types";
+import {
+  api,
+  base,
+  getSessionVersion,
+  getToken,
+  logout,
+  refresh,
+  SESSION_EVENT,
+} from "@/lib/api";
+import type { Member, Project, User, Workspace } from "@/lib/types";
 import InvitationInbox from "./InvitationInbox";
 import Image from "next/image";
 import logoImg from "@/img/logo.png";
@@ -60,6 +68,12 @@ export default function App() {
   const [unread, setUnread] = useState(0);
   const [online, setOnline] = useState(false);
   const [notificationEvent, setNotificationEvent] = useState(0);
+  const [workspaceRole, setWorkspaceRole] = useState("");
+  const [creatingWorkspace, setCreatingWorkspace] = useState(false);
+  const [creatingProject, setCreatingProject] = useState(false);
+  const [workspaceFormOpen, setWorkspaceFormOpen] = useState(false);
+  const canManageWorkspace =
+    workspaceRole === "OWNER" || workspaceRole === "ADMIN";
   useEffect(() => {
     const end = (event: Event) => {
       const reason = (event as CustomEvent<string>).detail;
@@ -72,6 +86,7 @@ export default function App() {
       );
       setUser(null);
       setWorkspace(null);
+      setWorkspaceRole("");
       setWorkspaces([]);
       setProjects([]);
       setProject(null);
@@ -83,18 +98,20 @@ export default function App() {
     return () => window.removeEventListener(SESSION_EVENT, end);
   }, []);
   const load = useCallback(async () => {
+    const version = getSessionVersion();
     try {
       const [me, ws] = await Promise.all([
         api.get<User>("/auth/me"),
         api.get<Workspace[]>("/workspaces"),
       ]);
+      if (version !== getSessionVersion()) return;
       setUser(me);
       setAuthNotice("");
       setWorkspaces(ws);
       const saved = Number(localStorage.getItem("workspace_id"));
       setWorkspace(ws.find((w) => w.id === saved) || ws[0] || null);
     } catch {
-      setUser(null);
+      if (version === getSessionVersion()) setUser(null);
     }
   }, []);
   useEffect(() => {
@@ -103,23 +120,37 @@ export default function App() {
       .finally(() => setBoot(false));
   }, [load]);
   useEffect(() => {
+    let active = true;
     if (!workspace) {
       setProjects([]);
       setProject(null);
+      setWorkspaceRole("");
       return;
     }
     localStorage.setItem("workspace_id", String(workspace.id));
-    api
-      .get<Project[]>(`/workspaces/${workspace.id}/projects`)
-      .then((rows) => {
+    setWorkspaceRole("");
+    Promise.all([
+      api.get<Project[]>(`/workspaces/${workspace.id}/projects`),
+      api.get<Member[]>(`/workspaces/${workspace.id}/members`),
+    ])
+      .then(([rows, members]) => {
+        if (!active) return;
+        setWorkspaceRole(
+          members.find((m) => m.user_id === user?.id)?.role || "",
+        );
         setError("");
         setProjects(rows);
         setProject(
           (old) => rows.find((p) => p.id === old?.id) || rows[0] || null,
         );
       })
-      .catch((e) => setError(e.message));
-  }, [workspace, online]);
+      .catch((e) => {
+        if (active) setError(e.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, [workspace, online, user?.id]);
   useEffect(() => {
     if (!user) return;
     const checkHealth = () =>
@@ -135,7 +166,10 @@ export default function App() {
     const update = () =>
       api
         .get<{ count: number }>("/notifications/unread-count")
-        .then((data) => setUnread(data.count))
+        .then((data) => {
+          setUnread(data.count);
+          setNotificationEvent((value) => value + 1);
+        })
         .catch(() => {});
     update();
     const timer = setInterval(update, 30000);
@@ -155,6 +189,12 @@ export default function App() {
       socket.onmessage = (e) => {
         const message = JSON.parse(e.data);
         if (message.event === "notification.created") {
+          if (
+            message.payload?.kind === "role_changed" ||
+            message.payload?.kind === "membership_removed" ||
+            message.payload?.kind === "project_access_changed"
+          )
+            load();
           setNotificationEvent((n) => n + 1);
           api
             .get<{ count: number }>("/notifications/unread-count")
@@ -171,35 +211,46 @@ export default function App() {
       closed = true;
       socket?.close();
     };
-  }, [user]);
+  }, [user, load]);
   async function createWorkspace(e: React.FormEvent) {
     e.preventDefault();
+    if (creatingWorkspace) return;
+    setCreatingWorkspace(true);
+    setError("");
     try {
       const ws = await api.post<Workspace>("/workspaces", {
         name: newWorkspace,
         description: "",
       });
-      setWorkspaces([...workspaces, ws]);
+      setWorkspaces((rows) => [...rows, ws]);
       setWorkspace(ws);
       setNewWorkspace("");
+      setWorkspaceFormOpen(false);
+      setSection("dashboard");
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setCreatingWorkspace(false);
     }
   }
   async function createProject(e: React.FormEvent) {
     e.preventDefault();
-    if (!workspace) return;
+    if (!workspace || !canManageWorkspace || creatingProject) return;
+    setCreatingProject(true);
+    setError("");
     try {
       const p = await api.post<Project>(
         `/workspaces/${workspace.id}/projects`,
         { name: newProject, description: "", status: "ACTIVE" },
       );
-      setProjects([...projects, p]);
+      setProjects((rows) => [...rows, p]);
       setProject(p);
       setNewProject("");
       setSection("board");
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setCreatingProject(false);
     }
   }
   if (boot)
@@ -254,6 +305,7 @@ export default function App() {
             <small>LEDGER · VOL. 01</small>
           </span>
           <button
+            type="button"
             className="icon-button mobile-only"
             onClick={() => setMobile(false)}
             aria-label={t("Đóng menu", "Close menu")}
@@ -283,9 +335,39 @@ export default function App() {
             </option>
           ))}
         </select>
+        {workspaces.length > 0 && (
+          <>
+            <button
+              type="button"
+              className="button subtle"
+              onClick={() => setWorkspaceFormOpen((open) => !open)}
+            >
+              {t("Thêm workspace", "Add workspace")}
+            </button>
+            {workspaceFormOpen && (
+              <form className="new-workspace-form" onSubmit={createWorkspace}>
+                <input
+                  required
+                  maxLength={160}
+                  aria-label={t("Tên workspace", "Workspace name")}
+                  value={newWorkspace}
+                  onChange={(event) => setNewWorkspace(event.target.value)}
+                />
+                <button
+                  type="submit"
+                  className="button primary"
+                  disabled={creatingWorkspace}
+                >
+                  {t("Tạo workspace", "Create workspace")}
+                </button>
+              </form>
+            )}
+          </>
+        )}
         <nav className="nav-list">
           {nav.map((n) => (
             <button
+              type="button"
               key={n.id}
               className={section === n.id ? "active" : ""}
               onClick={() => {
@@ -300,6 +382,7 @@ export default function App() {
         </nav>
         <div className="sidebar-bottom">
           <button
+            type="button"
             onClick={() => {
               setSection("profile");
               setMobile(false);
@@ -312,6 +395,7 @@ export default function App() {
             </span>
           </button>
           <button
+            type="button"
             className="logout"
             onClick={async () => {
               try {
@@ -333,6 +417,7 @@ export default function App() {
       <div className="main-area">
         <header className="topbar">
           <button
+            type="button"
             className="icon-button mobile-only"
             onClick={() => setMobile(true)}
             aria-label={t("Mở menu", "Open menu")}
@@ -341,7 +426,8 @@ export default function App() {
           </button>
           <div>
             <span className="breadcrumb">
-              WORKSPACE // {workspace?.name || t("Bắt đầu", "Get started")}
+              {"WORKSPACE // "}
+              {workspace?.name || t("Bắt đầu", "Get started")}
             </span>
             <h1>
               {nav.find((n) => n.id === section)?.label ||
@@ -362,6 +448,7 @@ export default function App() {
                 : t("Mất kết nối API", "API offline")}
             </span>
             <button
+              type="button"
               className="icon-button"
               title={t("Thông báo", "Notifications")}
               onClick={() => setSection("notifications")}
@@ -369,7 +456,11 @@ export default function App() {
               <Bell size={20} />
               {unread > 0 && <span className="unread-badge">{unread}</span>}
             </button>
-            <button className="avatar" onClick={() => setSection("profile")}>
+            <button
+              type="button"
+              className="avatar"
+              onClick={() => setSection("profile")}
+            >
               {user.name[0]?.toUpperCase()}
             </button>
           </div>
@@ -383,7 +474,9 @@ export default function App() {
           />
           {error && (
             <div className="error">
-              <button onClick={() => setError("")}>×</button>
+              <button type="button" onClick={() => setError("")}>
+                ×
+              </button>
               {messageText(error)}
             </div>
           )}
@@ -409,7 +502,11 @@ export default function App() {
                   onChange={(e) => setNewWorkspace(e.target.value)}
                   placeholder={t("Tên workspace", "Workspace name")}
                 />
-                <button className="button primary">
+                <button
+                  type="submit"
+                  className="button primary"
+                  disabled={creatingWorkspace}
+                >
                   {t("Tạo workspace", "Create workspace")}
                 </button>
               </form>
@@ -437,20 +534,27 @@ export default function App() {
                       </p>
                     </div>
                   </div>
-                  <form className="inline-form" onSubmit={createProject}>
-                    <input
-                      required
-                      value={newProject}
-                      onChange={(e) => setNewProject(e.target.value)}
-                      placeholder={t("Tên dự án mới", "New project name")}
-                    />
-                    <button className="button primary">
-                      + {t("Tạo dự án", "Create project")}
-                    </button>
-                  </form>
+                  {canManageWorkspace && (
+                    <form className="inline-form" onSubmit={createProject}>
+                      <input
+                        required
+                        value={newProject}
+                        onChange={(e) => setNewProject(e.target.value)}
+                        placeholder={t("Tên dự án mới", "New project name")}
+                      />
+                      <button
+                        type="submit"
+                        className="button primary"
+                        disabled={creatingProject}
+                      >
+                        + {t("Tạo dự án", "Create project")}
+                      </button>
+                    </form>
+                  )}
                   <div className="project-list">
                     {projects.map((p) => (
                       <button
+                        type="button"
                         key={p.id}
                         className="project-row"
                         onClick={() => {
@@ -496,6 +600,7 @@ export default function App() {
                     key={project.id}
                     project={project}
                     workspace={workspace}
+                    actorId={user.id}
                     onProjectChange={(updated) => {
                       setProject(updated);
                       setProjects((rows) =>
@@ -513,17 +618,30 @@ export default function App() {
                 ) : (
                   <div className="empty-large">
                     <h2>{t("Chưa có dự án", "No projects yet")}</h2>
-                    <form className="inline-form" onSubmit={createProject}>
-                      <input
-                        required
-                        value={newProject}
-                        onChange={(e) => setNewProject(e.target.value)}
-                        placeholder={t("Tên dự án", "Project name")}
-                      />
-                      <button className="button primary">
-                        {t("Tạo dự án", "Create project")}
-                      </button>
-                    </form>
+                    {canManageWorkspace ? (
+                      <form className="inline-form" onSubmit={createProject}>
+                        <input
+                          required
+                          value={newProject}
+                          onChange={(e) => setNewProject(e.target.value)}
+                          placeholder={t("Tên dự án", "Project name")}
+                        />
+                        <button
+                          type="submit"
+                          className="button primary"
+                          disabled={creatingProject}
+                        >
+                          {t("Tạo dự án", "Create project")}
+                        </button>
+                      </form>
+                    ) : (
+                      <p>
+                        {t(
+                          "Hãy liên hệ quản lý để được thêm vào dự án.",
+                          "Ask a manager to add you to a project.",
+                        )}
+                      </p>
+                    )}
                   </div>
                 ))}
               {section === "members" && (
@@ -605,7 +723,7 @@ export default function App() {
                       onChange={(e) => setNewWorkspace(e.target.value)}
                       placeholder={t("Tên workspace", "Workspace name")}
                     />
-                    <button className="button primary">
+                    <button type="submit" className="button primary">
                       {t("Tạo", "Create")}
                     </button>
                   </form>

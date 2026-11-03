@@ -137,7 +137,11 @@ export default function SettingsPanel({
               onChange={(e) => setDescription(e.target.value)}
             />
           </label>
-          <button className="button primary" disabled={saving || deleting}>
+          <button
+            type="submit"
+            className="button primary"
+            disabled={saving || deleting}
+          >
             {saving
               ? t("Đang lưu…", "Saving…")
               : t("Lưu thay đổi", "Save changes")}
@@ -176,7 +180,11 @@ export default function SettingsPanel({
             onChange={(e) => setNewPassword(e.target.value)}
           />
         </label>
-        <button className="button primary" disabled={changingPassword}>
+        <button
+          type="submit"
+          className="button primary"
+          disabled={changingPassword}
+        >
           {changingPassword
             ? t("Đang cập nhật…", "Updating…")
             : t("Cập nhật mật khẩu", "Update password")}

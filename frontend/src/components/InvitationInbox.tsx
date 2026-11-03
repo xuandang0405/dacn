@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 
@@ -21,16 +21,16 @@ export default function InvitationInbox({
   const [rows, setRows] = useState<Invitation[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<number | null>(null);
-  async function load() {
+  const load = useCallback(async () => {
     try {
       setRows(await api.get<Invitation[]>("/invitations"));
     } catch (e) {
       setError((e as Error).message);
     }
-  }
+  }, []);
   useEffect(() => {
     load();
-  }, [refreshKey]);
+  }, [refreshKey, load]);
   async function respond(row: Invitation, accept: boolean) {
     setBusy(row.id);
     setError("");
@@ -58,6 +58,7 @@ export default function InvitationInbox({
             <strong>{row.workspace}</strong> · {row.role}
           </span>
           <button
+            type="button"
             className="button"
             disabled={busy !== null}
             onClick={() => respond(row, true)}
@@ -65,6 +66,7 @@ export default function InvitationInbox({
             {t("Chấp nhận", "Accept")}
           </button>
           <button
+            type="button"
             className="button subtle"
             disabled={busy !== null}
             onClick={() => respond(row, false)}

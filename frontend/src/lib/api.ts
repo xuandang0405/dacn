@@ -4,13 +4,18 @@ export const base = (
 export const SESSION_EVENT = "stm:session-ended";
 let accessToken: string | null = null;
 let tokenRevision = 0;
+let sessionVersion = 0;
 let refreshInFlight: Promise<boolean> | null = null;
 export function setToken(token: string | null) {
+  if (token === null || accessToken === null) sessionVersion++;
   accessToken = token;
   tokenRevision++;
 }
 export function getToken() {
   return accessToken;
+}
+export function getSessionVersion() {
+  return sessionVersion;
 }
 export function endSession(reason = "expired") {
   setToken(null);

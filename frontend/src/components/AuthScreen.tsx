@@ -107,7 +107,7 @@ export default function AuthScreen({
           </p>
         </div>
         <div className="auth-visual-footer">
-          PROJECTS // PEOPLE // CAPACITY // PROGRESS
+          {"PROJECTS // PEOPLE // CAPACITY // PROGRESS"}
         </div>
       </div>
       <form className="auth-card" onSubmit={submit}>
@@ -205,7 +205,7 @@ export default function AuthScreen({
             {messageText(success || notice)}
           </div>
         )}
-        <button className="button primary full" disabled={busy}>
+        <button type="submit" className="button primary full" disabled={busy}>
           {busy
             ? t("Đang xử lý…", "Working…")
             : mode === "register"
