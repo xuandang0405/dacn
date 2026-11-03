@@ -1,0 +1,48 @@
+#1 [internal] load local bake definitions
+#1 reading from stdin 565B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 198B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.12-slim
+#3 DONE 0.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 115B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 6.10kB done
+#5 DONE 0.0s
+
+#6 [1/5] FROM docker.io/library/python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1
+#6 resolve docker.io/library/python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1 0.0s done
+#6 DONE 0.0s
+
+#7 [3/5] COPY requirements.txt requirements.lock ./
+#7 CACHED
+
+#8 [4/5] RUN pip install --no-cache-dir -r requirements.txt
+#8 CACHED
+
+#9 [2/5] WORKDIR /code
+#9 CACHED
+
+#10 [5/5] COPY . .
+#10 CACHED
+
+#11 exporting to image
+#11 exporting layers done
+#11 exporting manifest sha256:a6024775f0eb28015ae4a6176a0185e4094c92b12b69dcae884e0b267ceb06a7 0.0s done
+#11 exporting config sha256:dcf23b0ad047ff0f6e33af3fff74df9d68920a7b7b61138cd1ceea6421fa0ad6 0.0s done
+#11 exporting attestation manifest sha256:334164a08ee0b13333e281398784276a9f153039faf85e429f1afb2062074446 0.0s done
+#11 exporting manifest list sha256:8355fdf521b08dfd2589df19bccdb3b4c1fcffad6379f0312b153f8ac508f483 0.0s done
+#11 naming to docker.io/library/dacn-finalcheck-task-checks:latest done
+#11 unpacking to docker.io/library/dacn-finalcheck-task-checks:latest done
+#11 DONE 0.1s
+
+#12 resolving provenance for metadata file
+#12 DONE 0.0s
+{"module": "task-kanban-realtime", "source_revision": "working-tree", "started_utc": "2026-11-03T21:44:11.236207+00:00", "finished_utc": "2026-11-03T21:44:11.438069+00:00", "real_http": true, "external_ai_called": false, "checks": [{"check": "POST /auth/login", "passed": true, "http_status": 200}, {"check": "POST /workspaces", "passed": true, "http_status": 201}, {"check": "POST /workspaces/6/projects", "passed": true, "http_status": 201}, {"check": "GET /projects/8/columns", "passed": true, "http_status": 200}, {"check": "POST /projects/8/tasks", "passed": true, "http_status": 201}, {"check": "PATCH /tasks/41", "passed": true, "http_status": 422}, {"check": "PATCH /tasks/41", "passed": true, "http_status": 200}, {"check": "PATCH /tasks/41", "passed": true, "http_status": 409}, {"check": "POST /tasks/41/move", "passed": true, "http_status": 200}, {"check": "WebSocket connected", "passed": true}, {"check": "WebSocket connected", "passed": true}, {"check": "POST /projects/8/tasks", "passed": true, "http_status": 201}, {"check": "Both clients see committed task", "passed": true}, {"check": "Both clients see committed task", "passed": true}, {"check": "POST /tasks/42/subtasks", "passed": true, "http_status": 201}, {"check": "Both clients see committed subtask", "passed": true}, {"check": "Both clients see committed subtask", "passed": true}, {"check": "DELETE /subtasks/17", "passed": true, "http_status": 204}]}

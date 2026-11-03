@@ -1,0 +1,26 @@
+{
+  "date_local": "2026-11-04",
+  "framework": "Playwright Chromium",
+  "real_backend": true,
+  "external_gemini_called": false,
+  "stats": {
+    "startTime": "2026-11-03T21:51:38.906Z",
+    "duration": 13632.975,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "steps": [
+    "VI/EN login and registration",
+    "workspace/project/invitation/permissions",
+    "two users edit live tasks",
+    "dirty draft and version 409",
+    "live subtasks/comments/move Done",
+    "skill rating 3 to 0",
+    "real PDF/DOCX/TXT uploads",
+    "workspace settings and multiple workspaces",
+    "mobile analytics without page overflow",
+    "password change, local SMTP recovery and old JWT revocation"
+  ]
+}

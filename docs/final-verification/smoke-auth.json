@@ -1,0 +1,51 @@
+#1 [internal] load local bake definitions
+#1 reading from stdin 565B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 198B 0.0s done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.12-slim
+#3 DONE 0.1s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 115B done
+#4 DONE 0.0s
+
+#5 [1/5] FROM docker.io/library/python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1
+#5 resolve docker.io/library/python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1 0.0s done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 6.10kB done
+#6 DONE 0.0s
+
+#7 [2/5] WORKDIR /code
+#7 CACHED
+
+#8 [3/5] COPY requirements.txt requirements.lock ./
+#8 CACHED
+
+#9 [4/5] RUN pip install --no-cache-dir -r requirements.txt
+#9 CACHED
+
+#10 [5/5] COPY . .
+#10 CACHED
+
+#11 exporting to image
+#11 exporting layers done
+#11 exporting manifest sha256:a459fb2d8b72ea6cd62884a8db9fe676dfd7c80c9c4bc9b20fa594beaf2ec2ef done
+#11 exporting config sha256:587c1095d8288da93f9318dde82a5b6c438ca83437174368ee29f305945e5e0b done
+#11 exporting attestation manifest sha256:586b844c2f520ac837e89cbd809979472e704b3836849dd69c92720d591b1ebb 0.0s done
+#11 exporting manifest list sha256:2e305370b142b35b6271cecba3c30e3c6f59480f7dd461d719597c1db650ed66 done
+#11 naming to docker.io/library/dacn-finalcheck-auth-checks:latest done
+#11 unpacking to docker.io/library/dacn-finalcheck-auth-checks:latest done
+#11 DONE 0.1s
+
+#12 resolving provenance for metadata file
+#12 DONE 0.0s
+{"module": "auth-workspace", "source_revision": "working-tree", "started_utc": "2026-11-03T21:43:39.816947+00:00", "finished_utc": "2026-11-03T21:43:40.318048+00:00", "real_http": true, "external_ai_called": false, "checks": [{"check": "GET /health", "passed": true, "http_status": 200}, {"check": "POST /auth/login", "passed": true, "http_status": 401}, {"check": "POST /auth/login", "passed": true, "http_status": 200}, {"check": "GET /auth/me", "passed": true, "http_status": 200}, {"check": "POST /workspaces", "passed": true, "http_status": 201}, {"check": "POST /workspaces/4/projects", "passed": true, "http_status": 201}, {"check": "GET /projects/6/columns", "passed": true, "http_status": 200}, {"check": "PUT /workspaces/4", "passed": true, "http_status": 422}, {"check": "POST /auth/register", "passed": true, "http_status": 201}, {"check": "POST /auth/login", "passed": true, "http_status": 200}, {"check": "GET /workspaces/4", "passed": true, "http_status": 404}, {"check": "POST /workspaces/4/members", "passed": true, "http_status": 201}, {"check": "GET /invitations", "passed": true, "http_status": 200}, {"check": "POST /invitations/respond", "passed": true, "http_status": 200}, {"check": "GET /workspaces/4", "passed": true, "http_status": 200}, {"check": "DELETE /workspaces/4", "passed": true, "http_status": 403}, {"check": "POST /auth/change-password", "passed": true, "http_status": 204}, {"check": "GET /auth/me", "passed": true, "http_status": 401}, {"check": "POST /auth/login", "passed": true, "http_status": 200}, {"check": "POST /auth/logout", "passed": true, "http_status": 204}, {"check": "POST /auth/refresh", "passed": true, "http_status": 401}]}
