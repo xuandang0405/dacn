@@ -1,8 +1,9 @@
 ## Yêu cầu liên quan
 
-Issue: #
+Yêu cầu con: Refs #
 Người thực hiện:
 Loại thay đổi: Backend / Frontend / CSDL / Realtime / Docker / Tài liệu
+Nội dung yêu cầu của thầy được đáp ứng:
 
 Trong đợt khởi tạo, chọn base `integration/mvp`.
 
@@ -18,6 +19,7 @@ Trong đợt khởi tạo, chọn base `integration/mvp`.
 - Ảnh giao diện hoặc JSON/mã HTTP nếu có:
 - Luồng đúng / đầu vào sai / quyền truy cập đã kiểm tra:
 - Phần chưa kiểm tra và lý do:
+- Mã commit / môi trường / đường dẫn bằng chứng:
 
 ## Ảnh hưởng và cách khôi phục
 

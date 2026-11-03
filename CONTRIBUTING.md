@@ -9,7 +9,9 @@
 | Phạm Tấn Đạt | Realtime, kiểm thử | `feature/realtime-tests` | [#3](https://github.com/xuandang0405/dacn/issues/3) |
 | Trần Đăng Khoa | Frontend, ghép API, bàn giao | `feature/frontend-integration` | [#4](https://github.com/xuandang0405/dacn/issues/4) |
 
-Mỗi người nhận việc trong issue, đọc điều kiện nghiệm thu, thực hiện thay đổi và tự push bằng tài khoản của mình. Tên trong bảng là phân công; thành viên cần quyền Write trong repository trước khi push. Dương cần chấp nhận lời mời; Đạt và Khoa được chủ repository bổ sung sau.
+Mỗi người nhận từng yêu cầu con, đọc điều kiện nghiệm thu, thực hiện thay đổi và tự push bằng tài khoản của mình. Đăng và Dương đã có quyền ghi. Đạt và Khoa được chủ repository bổ sung sau.
+
+Danh sách đầu việc và bảng đối chiếu yêu cầu của thầy: [Yêu cầu tiến độ lần 2](docs/team/YEU_CAU_TIEN_DO_02.md). [Issue #8](https://github.com/xuandang0405/dacn/issues/8) tổng hợp hồ sơ; #1–#4 là nhóm việc của từng Lead, bên dưới có yêu cầu riêng để nhận và mở PR.
 
 Trong lúc chưa có quyền Write, có thể fork repository, push nhánh vào fork của mình rồi mở PR về `xuandang0405/dacn` với base `integration/mvp`.
 
@@ -34,6 +36,8 @@ git switch --track origin/feature/backend-ai
 
 Nếu đã có nhánh ở máy, dùng `git switch feature/backend-ai` rồi `git pull --ff-only`. Khi cần lấy thay đổi chung, chạy `git fetch origin` và `git merge origin/integration/mvp`; xử lý xung đột trước khi push. Không dùng tài khoản, email hoặc commit của người khác để ghi nhận phần việc của mình.
 
+Mỗi PR nên giải quyết một yêu cầu con. Nếu cần làm nhiều yêu cầu song song, tạo nhánh riêng từ `origin/integration/mvp`, ví dụ `git switch -c feature/so-issue-ten-cong-viec origin/integration/mvp`, rồi push nhánh đó. Không dùng chung một nhánh cho phần việc của hai người.
+
 ## Push phần việc
 
 ```sh
@@ -41,7 +45,7 @@ git status
 # Chỉ chọn các tệp thuộc phần việc đã kiểm tra.
 git add path/to/changed-file
 git diff --cached
-git commit -m "fix: mo ta thay doi; refs #2"
+git commit -m "fix: mo ta thay doi"
 git push -u origin feature/backend-ai
 ```
 
@@ -50,11 +54,13 @@ Không dùng `git add .` khi chưa rà soát tệp cấu hình và dữ liệu. 
 ## Mở Pull Request
 
 1. Chọn base `integration/mvp`, compare là nhánh phần việc của mình.
-2. Điền issue, phần đã sửa và cách kiểm tra theo PR template. Nếu chưa chạy được kiểm thử, ghi rõ lý do và phần chưa kiểm tra.
+2. Điền `Refs #<số yêu cầu con>`, phần đã sửa và cách kiểm tra theo PR template. Nếu chưa chạy được kiểm thử, ghi rõ lý do và phần chưa kiểm tra.
 3. Kèm kết quả phù hợp: JSON/mã HTTP cho API, ảnh trước/sau cho UI, log migration cho CSDL, log hai client cho realtime. Che thông tin bí mật.
 4. Yêu cầu một thành viên khác có quyền Write review. Người tạo PR không tự duyệt PR của mình.
 5. Sửa yêu cầu review và chờ cả `Backend MySQL 8` lẫn `Frontend build` đạt trước khi merge. Push bổ sung có thể làm mất approval cũ.
 6. Sau khi merge, kiểm tra lại tiêu chí issue rồi mới đánh dấu hoàn tất/đóng issue. Trong giai đoạn chuyển nhánh, không dựa vào từ khóa tự đóng issue.
+
+Review hiện tại: Đăng review thay đổi Backend của Dương; Dương review phần CSDL và cấu hình của Đăng. Đạt/Khoa yêu cầu một người phù hợp trong hai người này review cho đến khi nhóm có đủ tài khoản. PR #10 nhập mã nền vào develop cần Dương review trước khi hợp nhất.
 
 ## Kiểm tra theo phần việc
 

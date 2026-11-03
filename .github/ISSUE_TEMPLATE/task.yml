@@ -1,8 +1,23 @@
 name: Yêu cầu triển khai
 description: Giao phần việc có mã nguồn, kiểm thử và Pull Request
 title: "[TASK] "
-labels: ["status:ready"]
+labels: ["type:request", "rubric:progress-02", "status:ready"]
 body:
+  - type: dropdown
+    id: rubric
+    attributes:
+      label: Yêu cầu tiến độ được đáp ứng
+      options:
+        - Hành chính và phân công
+        - CSDL và dữ liệu mẫu
+        - Backend và hợp đồng API
+        - Frontend và luồng E2E
+        - Test Report
+        - Bug log và đóng băng tính năng
+        - README và Docker
+        - Cloud và demo/video
+    validations:
+      required: true
   - type: dropdown
     id: owner
     attributes:
@@ -45,6 +60,8 @@ body:
     id: deadline
     attributes:
       label: Hạn hoàn thành
+    validations:
+      required: true
   - type: textarea
     id: verification
     attributes:
