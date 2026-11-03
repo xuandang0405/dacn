@@ -26,6 +26,26 @@ const labels: Record<string, [string, string]> = {
   IN_PROGRESS: ["Đang thực hiện", "In progress"],
   REVIEW: ["Đang kiểm tra", "Review"],
   DONE: ["Hoàn thành", "Done"],
+  HUMAN: ["Con người", "Human"],
+  "task.created": ["Tạo công việc", "Task created"],
+  "task.updated": ["Cập nhật công việc", "Task updated"],
+  "task.assigned": ["Phân công công việc", "Task assigned"],
+  "task.moved": ["Di chuyển công việc", "Task moved"],
+  "task.completed": ["Hoàn thành công việc", "Task completed"],
+  "task.deleted": ["Xóa công việc", "Task deleted"],
+  "project.created": ["Tạo dự án", "Project created"],
+  "comment.created": ["Thêm bình luận", "Comment added"],
+  "member.role_changed": ["Đổi vai trò thành viên", "Member role changed"],
+  task: ["Công việc", "Task"],
+  project: ["Dự án", "Project"],
+  comment: ["Bình luận", "Comment"],
+  user: ["Tài khoản", "Account"],
+  task_assigned: ["Phân công", "Assignment"],
+  role_changed: ["Thay đổi vai trò", "Role change"],
+  invitation: ["Lời mời", "Invitation"],
+  mention: ["Nhắc tên", "Mention"],
+  task_overdue: ["Quá hạn", "Overdue"],
+  deadline_soon: ["Sắp đến hạn", "Upcoming deadline"],
 };
 export function enumLabel(value: string, language: Language) {
   return labels[value]?.[language === "vi" ? 0 : 1] || value;
@@ -74,11 +94,7 @@ export function useLanguage() {
 export function LanguageSwitch() {
   const { language, setLanguage } = useLanguage();
   return (
-    <div
-      className="language-switch"
-      role="group"
-      aria-label="Language / Ngôn ngữ"
-    >
+    <fieldset className="language-switch" aria-label="Language / Ngôn ngữ">
       <button
         type="button"
         aria-pressed={language === "vi"}
@@ -93,6 +109,6 @@ export function LanguageSwitch() {
       >
         EN
       </button>
-    </div>
+    </fieldset>
   );
 }

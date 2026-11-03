@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { api } from "@/lib/api";
 import { enumLabel, useLanguage } from "@/lib/language";
+import { formatTimestamp } from "@/lib/dates";
 import type {
   Analytics,
   Member,
@@ -187,8 +188,8 @@ export default function Overview({
           <h2>{t("Hiệu quả dự án", "Project performance")}</h2>
           <p>
             {t(
-              "MAPE so sánh giờ thực tế của công việc đã hoàn thành với ước lượng được chốt lần đầu. Sửa ước lượng về sau không đổi mốc này. Thiếu mẫu sẽ hiển thị “Chưa đủ dữ liệu”.",
-              "MAPE compares actual hours of completed tasks with their first approved estimate. Later edits do not change this baseline. Missing samples are shown as “Insufficient data”.",
+              "MAPE so sánh giờ thực tế của công việc đã hoàn thành với ước lượng lớn hơn 0 được chốt đầu tiên. Mức 0 khi tạo thẻ là chưa ước lượng. Sửa ước lượng về sau không đổi mốc này.",
+              "MAPE compares actual hours of completed tasks with their first positive approved estimate. Zero on a new card means not yet estimated. Later edits do not change this baseline.",
             )}
           </p>
         </div>
@@ -197,6 +198,7 @@ export default function Overview({
             const a = analytics[p.id];
             return (
               <button
+                type="button"
                 className="panel analytics-card"
                 key={p.id}
                 onClick={() => onOpenProject(p)}
@@ -384,6 +386,7 @@ export default function Overview({
         <div className="project-list">
           {data.upcoming_deadlines.map((d) => (
             <button
+              type="button"
               className="project-row"
               key={d.task_id}
               onClick={() => {
@@ -419,6 +422,7 @@ export default function Overview({
           <div className="project-list">
             {projects.slice(0, 5).map((p) => (
               <button
+                type="button"
                 className="project-row"
                 key={p.id}
                 onClick={() => onOpenProject(p)}
@@ -442,12 +446,10 @@ export default function Overview({
               <div key={a.id}>
                 <span className="activity-dot" />
                 <span>
-                  <strong>{a.action}</strong>
+                  <strong>{enumLabel(a.action, language)}</strong>
                   <small>
-                    {a.entity} #{a.entity_id} ·{" "}
-                    {new Date(a.created_at).toLocaleString(
-                      language === "vi" ? "vi-VN" : "en-US",
-                    )}
+                    {enumLabel(a.entity, language)} #{a.entity_id} ·{" "}
+                    {formatTimestamp(a.created_at, language)}
                   </small>
                 </span>
               </div>

@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { useLanguage } from "@/lib/language";
+import { enumLabel, useLanguage } from "@/lib/language";
+import { formatTimestamp } from "@/lib/dates";
 type Notification = {
   id: number;
   kind: string;
@@ -20,18 +21,24 @@ export default function Notifications({
   const { language, t, message: messageText } = useLanguage();
   const [rows, setRows] = useState<Notification[]>([]);
   const [error, setError] = useState("");
-  async function load() {
+  const [unread, setUnread] = useState(0);
+  const load = useCallback(async () => {
     try {
-      const next = await api.get<Notification[]>("/notifications");
+      const [next, total] = await Promise.all([
+        api.get<Notification[]>("/notifications"),
+        api.get<{ count: number }>("/notifications/unread-count"),
+      ]);
       setRows(next);
-      onUnreadChange(next.filter((n) => !n.read).length);
+      setUnread(total.count);
+      onUnreadChange(total.count);
+      setError("");
     } catch (e) {
       setError((e as Error).message);
     }
-  }
+  }, [onUnreadChange]);
   useEffect(() => {
     load();
-  }, [refreshKey]);
+  }, [refreshKey, load]);
   async function mark(id: number) {
     try {
       await api.post(`/notifications/${id}/read`);
@@ -54,10 +61,10 @@ export default function Notifications({
         <div>
           <h2>{t("THÔNG BÁO HỆ THỐNG", "NOTIFICATIONS")}</h2>
           <p className="muted">
-            {rows.filter((x) => !x.read).length} {t("chưa đọc", "unread")}
+            {unread} {t("chưa đọc", "unread")}
           </p>
         </div>
-        <button className="button subtle" onClick={all}>
+        <button type="button" className="button subtle" onClick={all}>
           {t("Đánh dấu tất cả đã đọc", "Mark all as read")}
         </button>
       </div>
@@ -65,18 +72,46 @@ export default function Notifications({
       <div className="notification-list">
         {rows.map((n) => (
           <button
+            type="button"
             key={n.id}
             className={n.read ? "" : "unread"}
             onClick={() => mark(n.id)}
           >
             <span className="activity-dot" />
             <span>
-              <strong>{n.message}</strong>
+              <strong>
+                {language === "en"
+                  ? n.message
+                  : n.kind === "task_assigned"
+                    ? n.message.replace(/^Assigned: /, "Được giao: ")
+                    : n.kind === "mention"
+                      ? n.message.replace(/ mentioned you$/, " đã nhắc đến bạn")
+                      : n.kind === "role_changed"
+                        ? n.message.replace(
+                            /^Your role is now (.+)$/,
+                            (_, role: string) =>
+                              `Vai trò mới của bạn: ${enumLabel(role, language)}`,
+                          )
+                        : n.kind === "task_overdue"
+                          ? n.message.replace(
+                              /^Task overdue: /,
+                              "Công việc quá hạn: ",
+                            )
+                          : n.kind === "deadline_soon"
+                            ? n.message.replace(
+                                /^Deadline approaching: /,
+                                "Sắp đến hạn: ",
+                              )
+                            : n.kind === "invitation"
+                              ? t(
+                                  "Bạn có lời mời tham gia workspace đang chờ phản hồi.",
+                                  n.message,
+                                )
+                              : n.message}
+              </strong>
               <small>
-                {n.kind.toUpperCase()} ·{" "}
-                {new Date(n.created_at).toLocaleString(
-                  language === "vi" ? "vi-VN" : "en-US",
-                )}
+                {enumLabel(n.kind, language)} ·{" "}
+                {formatTimestamp(n.created_at, language)}
               </small>
             </span>
           </button>

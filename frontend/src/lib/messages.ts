@@ -1,5 +1,7 @@
 const vietnamese: Record<string, string> = {
   "Workspace saved.": "Đã lưu workspace.",
+  "Invitation sent. Waiting for acceptance.":
+    "Đã gửi lời mời. Người nhận cần chấp nhận trước khi trở thành thành viên.",
   "Invalid credentials": "Email hoặc mật khẩu không đúng.",
   "Authentication required": "Vui lòng đăng nhập.",
   "Invalid or expired token": "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.",
