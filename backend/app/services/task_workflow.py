@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models import Activity, KanbanColumn, Notification, Project, Task, TaskRequirement, User
@@ -44,7 +44,8 @@ def list_tasks(project_id: int, assignee_id: int | None = None, column_id: int |
     if due_before:
         stmt = stmt.where(Task.due_date <= due_before)
     total = db.scalar(select(func.count()).select_from(stmt.subquery()))
-    sort_col = {"position": Task.position, "due_date": Task.due_date, "created_at": Task.created_at, "priority": Task.priority}[sort]
+    priority_order = case({"LOW": 0, "MEDIUM": 1, "HIGH": 2, "URGENT": 3}, value=Task.priority, else_=4)
+    sort_col = {"position": Task.position, "due_date": Task.due_date, "created_at": Task.created_at, "priority": priority_order}[sort]
     ordering = sort_col.desc() if direction == "desc" else sort_col.asc()
     rows = db.scalars(stmt.order_by(ordering, Task.id).offset((page - 1) * size).limit(size)).all()
     return {"items": [TaskOut.model_validate(row).model_dump(mode="json") for row in rows], "total": total, "page": page, "size": size}
