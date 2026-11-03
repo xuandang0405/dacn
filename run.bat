@@ -1,5 +1,6 @@
 @echo off
 setlocal
+set "PYTHONUTF8=1"
 cd /d "%~dp0" || goto :failed
 
 if not exist "backend\.venv\Scripts\python.exe" (

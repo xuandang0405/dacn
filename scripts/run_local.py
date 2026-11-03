@@ -49,9 +49,12 @@ def prepare(env: dict[str, str]):
         )
         stamp.write_text(requirements_hash, encoding="utf-8")
 
-    if not (FRONTEND / "node_modules" / "next" / "package.json").exists():
+    frontend_hash = hashlib.sha256((FRONTEND / "package-lock.json").read_bytes()).hexdigest()
+    frontend_stamp = FRONTEND / "node_modules" / ".dacn-package-lock.sha256"
+    if not frontend_stamp.exists() or frontend_stamp.read_text(encoding="utf-8") != frontend_hash:
         print("Installing frontend dependencies...", flush=True)
         run(["npm.cmd", "ci"], cwd=FRONTEND, env=env)
+        frontend_stamp.write_text(frontend_hash, encoding="utf-8")
 
     import pymysql
     from sqlalchemy.engine import make_url

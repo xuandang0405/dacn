@@ -34,7 +34,9 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: backend/requirements.txt
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements.lock
       - run: pip install -r backend/requirements.txt
       - name: Fresh migration and regression tests
         working-directory: backend
@@ -58,5 +60,43 @@ jobs:
         working-directory: frontend
       - run: npx tsc --noEmit
         working-directory: frontend
+      - run: npm run lint && npm test && npm audit --audit-level=moderate
+        working-directory: frontend
       - run: npm run build
         working-directory: frontend
+  browser:
+    name: Website and Docker workflows
+    runs-on: ubuntu-latest
+    env:
+      E2E_OUTPUT_DIR: ${{ github.workspace }}/test-results/browser
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Start isolated MySQL, API, UI, scheduler and local SMTP
+        run: |
+          python3 scripts/setup_demo_env.py
+          docker compose -p dacn-ci -f docker-compose.yml -f docker/compose.mail.yml up -d --build --wait --wait-timeout 240
+      - name: Check the four modules through real HTTP and WebSocket
+        run: |
+          mkdir -p test-results/smoke
+          for module in auth ai task insights; do
+            docker compose -p dacn-ci -f docker-compose.yml -f docker/compose.mail.yml -f docker/compose.${module}-checks.yml run --rm --no-deps -T ${module}-checks > test-results/smoke/${module}.json
+          done
+      - name: Install browser tests
+        working-directory: frontend
+        run: npm ci && npx playwright install --with-deps chromium
+      - name: Test owner and member UI workflows
+        working-directory: frontend
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: website-test-results
+          path: test-results/
+      - name: Stop the test stack
+        if: always()
+        run: docker compose -p dacn-ci -f docker-compose.yml -f docker/compose.mail.yml down
