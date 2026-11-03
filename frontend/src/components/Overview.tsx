@@ -57,31 +57,39 @@ export default function Overview({
   const [analytics, setAnalytics] = useState<Record<number, Analytics>>({});
   const [people, setPeople] = useState<Member[]>([]);
   const [error, setError] = useState("");
+  const [analyticsErrors, setAnalyticsErrors] = useState<Record<number, string>>({});
   useEffect(() => {
+    let active = true;
     setData(null);
     setError("");
+    setAnalytics({});
+    setAnalyticsErrors({});
     api
       .get<Dashboard>(`/workspaces/${workspace.id}/dashboard`)
-      .then(setData)
-      .catch((e) => setError(e.message));
+      .then((value) => { if (active) setData(value); })
+      .catch((e) => { if (active) setError(e.message); });
     api
       .get<Member[]>(`/workspaces/${workspace.id}/members`)
-      .then(setPeople)
-      .catch(() => {});
+      .then((value) => { if (active) setPeople(value); })
+      .catch((e) => { if (active) setError(e.message); });
     Promise.all(
       projects.map((p) =>
         api
           .get<Analytics>(`/projects/${p.id}/analytics`)
           .then((a) => [p.id, a] as const)
-          .catch(() => null),
+          .catch((e) => {
+            if (active) setAnalyticsErrors((errors) => ({ ...errors, [p.id]: e.message }));
+            return null;
+          }),
       ),
     ).then((rows) =>
-      setAnalytics(
+      active && setAnalytics(
         Object.fromEntries(
           rows.filter((x): x is readonly [number, Analytics] => x !== null),
         ),
       ),
     );
+    return () => { active = false; };
   }, [workspace.id, projects]);
   if (error) return <div className="error">{error}</div>;
   if (!data)
@@ -113,7 +121,7 @@ export default function Overview({
             )}
           </p>
         </div>
-        <div className="panel">
+        <div className="panel table-scroll">
           <table>
             <thead>
               <tr>
@@ -161,8 +169,8 @@ export default function Overview({
           <h2>{t("Hiệu quả dự án", "Project performance")}</h2>
           <p>
             {t(
-              "MAPE chỉ tính công việc có giờ thực tế lớn hơn 0. Thiếu dữ liệu sẽ hiển thị “Insufficient Data”.",
-              "MAPE includes only tasks with actual hours above zero. Missing data is shown as “Insufficient Data”.",
+              "MAPE so sánh giờ thực tế của công việc đã hoàn thành với ước lượng được chốt lần đầu. Sửa ước lượng về sau không đổi mốc này. Thiếu mẫu sẽ hiển thị “Chưa đủ dữ liệu”.",
+              "MAPE compares actual hours of completed tasks with their first approved estimate. Later edits do not change this baseline. Missing samples are shown as “Insufficient data”.",
             )}
           </p>
         </div>
@@ -189,33 +197,34 @@ export default function Overview({
                     </p>
                     <div className="metric-row">
                       <div>
-                        <small>Estimated</small>
+                        <small>{t("Ước lượng hiện tại", "Current estimate")}</small>
                         <strong>{a.estimated_hours}h</strong>
                       </div>
                       <div>
-                        <small>Actual</small>
+                        <small>{t("Thực tế", "Actual")}</small>
                         <strong>{a.actual_hours}h</strong>
                       </div>
                       <div>
                         <small>MAPE</small>
                         <strong>
-                          {a.mape === null ? "Insufficient Data" : `${a.mape}%`}
+                          {a.mape === null ? t("Chưa đủ dữ liệu", "Insufficient data") : `${a.mape}%`}
                         </strong>
                       </div>
                     </div>
                     <p>
                       AI:{" "}
                       {a.ai_mape === null
-                        ? "Insufficient Data"
+                        ? t("Chưa đủ dữ liệu", "Insufficient data")
                         : `${a.ai_mape}%`}{" "}
-                      · Human:{" "}
+                      · {t("Con người", "Human")}:{" "}
                       {a.human_mape === null
-                        ? "Insufficient Data"
+                        ? t("Chưa đủ dữ liệu", "Insufficient data")
                         : `${a.human_mape}%`}
                     </p>
+                    <p className="muted">{a.mape_sample_count} {t("công việc đủ điều kiện", "eligible tasks")}</p>
                   </>
                 ) : (
-                  <p>{t("Đang tải…", "Loading…")}</p>
+                  <p>{analyticsErrors[p.id] || t("Đang tải…", "Loading…")}</p>
                 )}
               </button>
             );

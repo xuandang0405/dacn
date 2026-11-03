@@ -15,6 +15,16 @@ const labels: Record<string, [string, string]> = {
   OVERLOADED: ["Quá tải", "Overloaded"],
   NORMAL: ["Bình thường", "Normal"],
   UNDERUTILIZED: ["Còn khả năng", "Underutilized"],
+  NO_CAPACITY: ["Chưa có năng lực khả dụng", "No capacity"],
+  BUSY: ["Bận", "Busy"],
+  OWNER: ["Chủ sở hữu", "Owner"],
+  ADMIN: ["Quản trị viên", "Administrator"],
+  MEMBER: ["Thành viên", "Member"],
+  BACKLOG: ["Danh sách chờ", "Backlog"],
+  TODO: ["Cần làm", "To do"],
+  IN_PROGRESS: ["Đang thực hiện", "In progress"],
+  REVIEW: ["Đang kiểm tra", "Review"],
+  DONE: ["Hoàn thành", "Done"],
 };
 export function enumLabel(value: string, language: Language) {
   return labels[value]?.[language === "vi" ? 0 : 1] || value;
