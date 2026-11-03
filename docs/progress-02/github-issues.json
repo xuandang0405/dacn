@@ -1,0 +1,66 @@
+[
+  {
+    "number": 1,
+    "title": "[Đăng] CSDL migration seed và hợp đồng dữ liệu",
+    "url": "https://github.com/xuandang0405/dacn/issues/1",
+    "owner": "Nguyễn Xuân Đăng",
+    "branch": "feature/database-seed",
+    "proposed_due": "2026-10-23"
+  },
+  {
+    "number": 2,
+    "title": "[Dương] Backend JWT RBAC và trợ lý AI theo tài liệu",
+    "url": "https://github.com/xuandang0405/dacn/issues/2",
+    "owner": "Phạm Minh Dương",
+    "branch": "feature/backend-ai",
+    "proposed_due": "2026-10-23"
+  },
+  {
+    "number": 3,
+    "title": "[Đạt] Realtime kiểm thử và demo hai vai trò",
+    "url": "https://github.com/xuandang0405/dacn/issues/3",
+    "owner": "Phạm Tấn Đạt",
+    "branch": "feature/realtime-tests",
+    "proposed_due": "2026-11-05"
+  },
+  {
+    "number": 4,
+    "title": "[Khoa] Frontend ghép API Docker và bàn giao",
+    "url": "https://github.com/xuandang0405/dacn/issues/4",
+    "owner": "Trần Đăng Khoa",
+    "branch": "feature/frontend-integration",
+    "proposed_due": "2026-11-05"
+  },
+  {
+    "number": 5,
+    "title": "[BUG P1] MySQL 8 timeout ở tải 100 đồng thời",
+    "url": "https://github.com/xuandang0405/dacn/issues/5",
+    "owner": "Phạm Minh Dương phối hợp Phạm Tấn Đạt",
+    "branch": "fix/mysql-concurrency",
+    "proposed_due": "2026-11-05"
+  },
+  {
+    "number": 6,
+    "title": "[BUG P1] MAPE chưa dùng task Done và baseline AI bất biến",
+    "url": "https://github.com/xuandang0405/dacn/issues/6",
+    "owner": "Phạm Minh Dương",
+    "branch": "fix/ai-baseline-mape",
+    "proposed_due": "2026-11-05"
+  },
+  {
+    "number": 7,
+    "title": "[AI] Chấm chất lượng tiếng Việt và tiếng Anh",
+    "url": "https://github.com/xuandang0405/dacn/issues/7",
+    "owner": "Phạm Minh Dương phối hợp Nguyễn Xuân Đăng",
+    "branch": "feature/backend-ai",
+    "proposed_due": "2026-11-05"
+  },
+  {
+    "number": 8,
+    "title": "[Bàn giao] Cloud video và lịch sử đóng góp thật",
+    "url": "https://github.com/xuandang0405/dacn/issues/8",
+    "owner": "Trần Đăng Khoa phối hợp cả nhóm",
+    "branch": "feature/frontend-integration",
+    "proposed_due": "2026-11-05"
+  }
+]

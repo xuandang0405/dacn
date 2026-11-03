@@ -1,0 +1,62 @@
+name: Yêu cầu triển khai
+description: Giao phần việc có mã nguồn, kiểm thử và Pull Request
+title: "[TASK] "
+labels: ["status:ready"]
+body:
+  - type: dropdown
+    id: owner
+    attributes:
+      label: Người phụ trách
+      options:
+        - Nguyễn Xuân Đăng
+        - Phạm Minh Dương
+        - Phạm Tấn Đạt
+        - Trần Đăng Khoa
+    validations:
+      required: true
+  - type: dropdown
+    id: module
+    attributes:
+      label: Phân hệ
+      options: [Backend, Frontend, CSDL, Realtime, Docker, Tài liệu]
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Kết quả cần bàn giao
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Điều kiện nghiệm thu
+      description: Ghi API, màn hình, dữ liệu hoặc kết quả kiểm thử cần có.
+    validations:
+      required: true
+  - type: input
+    id: branch
+    attributes:
+      label: Nhánh và phạm vi tệp
+      description: Ghi nhánh nhận việc cùng tệp/module cần sửa.
+    validations:
+      required: true
+  - type: input
+    id: deadline
+    attributes:
+      label: Hạn hoàn thành
+  - type: textarea
+    id: verification
+    attributes:
+      label: Cách kiểm tra và bằng chứng
+    validations:
+      required: true
+  - type: checkboxes
+    id: handoff
+    attributes:
+      label: Sản phẩm cần bàn giao
+      options:
+        - label: Commit và push phần thay đổi lên nhánh được giao.
+          required: true
+        - label: Mở PR, kèm kết quả kiểm tra và yêu cầu người khác review.
+          required: true

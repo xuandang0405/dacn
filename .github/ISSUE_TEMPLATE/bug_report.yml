@@ -1,0 +1,31 @@
+name: Báo lỗi
+description: Ghi lỗi có bước tái hiện và kết quả mong đợi
+title: "[BUG] "
+labels: [bug]
+body:
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Các bước tái hiện
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Kết quả mong đợi và kết quả thực tế
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Bằng chứng
+      description: Ghi mã commit, môi trường, HTTP/log/ảnh liên quan; không đưa token hoặc mật khẩu.
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Mức ảnh hưởng
+      options: [Chặn luồng chính, Sai dữ liệu hoặc sai quyền, Lỗi hiển thị, Cải thiện khác]
+    validations:
+      required: true

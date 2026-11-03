@@ -1,0 +1,10 @@
+{
+  "date": "2026-10-13",
+  "probe_http_status": 429,
+  "quota_metric": "generativelanguage.googleapis.com/generate_content_free_tier_requests",
+  "quota_id": "GenerateRequestsPerDayPerProjectPerModel-FreeTier",
+  "quota_value": 20,
+  "provider_retry_delay_seconds": 48286,
+  "interpretation": "Daily model quota exhausted; a new key in the same project does not increase project quota.",
+  "old_provider_key_revocation": "awaiting_account_owner_confirmation"
+}

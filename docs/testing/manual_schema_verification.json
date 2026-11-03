@@ -1,0 +1,14 @@
+{
+  "database": "dacn_verify_manual_0cb33933",
+  "server_version": "(10, 4, 32)",
+  "migration_head": "0005",
+  "manual_sql_applied": true,
+  "physical_columns_match_orm": true,
+  "foreign_keys_match_orm": true,
+  "tables": 21,
+  "fields": 171,
+  "triggers": [
+    "immutable_estimate_update",
+    "immutable_estimate_delete"
+  ]
+}

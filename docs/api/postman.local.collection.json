@@ -1,0 +1,1638 @@
+{
+  "info": {
+    "name": "Smart Task Manager current local API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "POST /api/v1/auth/register",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/auth/login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/auth/refresh",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/auth/refresh"
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/auth/logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/auth/logout"
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/auth/me",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/auth/me",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/auth/change-password",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/auth/change-password",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/auth/forgot-password",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/auth/forgot-password",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/auth/reset-password",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/auth/reset-password",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/workspaces",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/workspaces",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/workspaces",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/workspaces",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/workspaces/{workspace_id}",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "PUT /api/v1/workspaces/{workspace_id}",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "DELETE /api/v1/workspaces/{workspace_id}",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/workspaces/{workspace_id}/members",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/members",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/workspaces/{workspace_id}/members",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/members",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "PATCH /api/v1/workspaces/{workspace_id}/members/{user_id}",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/members/{user_id}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "DELETE /api/v1/workspaces/{workspace_id}/members/{user_id}",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/members/{user_id}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/workspaces/{workspace_id}/projects",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/projects",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/workspaces/{workspace_id}/projects",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/projects",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/projects/{project_id}",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/projects/{project_id}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "PUT /api/v1/projects/{project_id}",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/projects/{project_id}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "DELETE /api/v1/projects/{project_id}",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/projects/{project_id}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/projects/{project_id}/members",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/projects/{project_id}/members",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/projects/{project_id}/members/{user_id}",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/projects/{project_id}/members/{user_id}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "DELETE /api/v1/projects/{project_id}/members/{user_id}",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/projects/{project_id}/members/{user_id}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/projects/{project_id}/columns",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/projects/{project_id}/columns",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/projects/{project_id}/columns",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/projects/{project_id}/columns",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/projects/{project_id}/tasks",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/projects/{project_id}/tasks",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/projects/{project_id}/tasks",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/projects/{project_id}/tasks",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/tasks/{task_id}",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/tasks/{task_id}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "PATCH /api/v1/tasks/{task_id}",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/tasks/{task_id}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "DELETE /api/v1/tasks/{task_id}",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/tasks/{task_id}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/tasks/{task_id}/required-skills",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/tasks/{task_id}/required-skills",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/tasks/{task_id}/move",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/tasks/{task_id}/move",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/tasks/{task_id}/activity",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/tasks/{task_id}/activity",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/tasks/{task_id}/subtasks",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/tasks/{task_id}/subtasks",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/tasks/{task_id}/subtasks",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/tasks/{task_id}/subtasks",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "PUT /api/v1/subtasks/{subtask_id}",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/subtasks/{subtask_id}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "DELETE /api/v1/subtasks/{subtask_id}",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/subtasks/{subtask_id}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/tasks/{task_id}/comments",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/tasks/{task_id}/comments",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/tasks/{task_id}/comments",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/tasks/{task_id}/comments",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/notifications",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/notifications",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/notifications/unread-count",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/notifications/unread-count",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/notifications/{notification_id}/read",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/notifications/{notification_id}/read",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/notifications/read-all",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/notifications/read-all",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/workspaces/{workspace_id}/skills",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/skills",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/workspaces/{workspace_id}/skills",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/skills",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "PUT /api/v1/skills/{skill_id}/members",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/skills/{skill_id}/members",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/workspaces/{workspace_id}/workload",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/workload",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/projects/{project_id}/analytics",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/projects/{project_id}/analytics",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/workspaces/{workspace_id}/dashboard",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/dashboard",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/ai/projects/{project_id}/documents",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/ai/projects/{project_id}/documents",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/ai/projects/{project_id}/documents",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/ai/projects/{project_id}/documents",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": ""
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "DELETE /api/v1/ai/documents/{document_id}",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/ai/documents/{document_id}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/ai/projects/{project_id}/query",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/ai/projects/{project_id}/query",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/ai/decompose-task",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/ai/decompose-task",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/ai/projects/{project_id}/suggest-members",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/ai/projects/{project_id}/suggest-members",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/ai/requests/{request_id}/confirm",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/ai/requests/{request_id}/confirm",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/invitations",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/invitations",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "POST /api/v1/invitations/respond",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/invitations/respond",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /health",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "http://localhost:3000"
+          }
+        ],
+        "url": "{{base_url}}/health"
+      },
+      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    }
+  ]
+}

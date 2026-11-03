@@ -1,0 +1,656 @@
+[
+  {
+    "id": "bfd_overall",
+    "title": "BFD toàn hệ thống",
+    "kind": "BFD",
+    "path": "diagrams/verified/bfd_overall.png",
+    "bounds": [
+      -5,
+      -15,
+      990,
+      620
+    ]
+  },
+  {
+    "id": "bfd_1",
+    "title": "BFD chi tiết Tài khoản và Workspace và dự án",
+    "kind": "BFD",
+    "path": "diagrams/verified/bfd_1.png",
+    "bounds": [
+      15,
+      -15,
+      990,
+      755
+    ]
+  },
+  {
+    "id": "bfd_2",
+    "title": "BFD chi tiết Công việc và Cộng tác",
+    "kind": "BFD",
+    "path": "diagrams/verified/bfd_2.png",
+    "bounds": [
+      15,
+      -15,
+      990,
+      900
+    ]
+  },
+  {
+    "id": "bfd_3",
+    "title": "BFD chi tiết AI theo tài liệu và Năng lực và phân tích",
+    "kind": "BFD",
+    "path": "diagrams/verified/bfd_3.png",
+    "bounds": [
+      15,
+      -15,
+      990,
+      755
+    ]
+  },
+  {
+    "id": "uc_overall",
+    "title": "Use Case tổng quát",
+    "kind": "Use Case",
+    "path": "diagrams/verified/uc_overall.png",
+    "bounds": [
+      -30,
+      -15,
+      1350,
+      1390
+    ]
+  },
+  {
+    "id": "uc_module_1",
+    "title": "Use Case phân hệ Tài khoản",
+    "kind": "Use Case",
+    "path": "diagrams/verified/uc_module_1.png",
+    "bounds": [
+      30.5,
+      -15,
+      1289.5,
+      1100
+    ]
+  },
+  {
+    "id": "uc_module_2",
+    "title": "Use Case phân hệ Workspace và dự án",
+    "kind": "Use Case",
+    "path": "diagrams/verified/uc_module_2.png",
+    "bounds": [
+      11.5,
+      -15,
+      933.5,
+      810
+    ]
+  },
+  {
+    "id": "uc_module_3",
+    "title": "Use Case phân hệ Công việc",
+    "kind": "Use Case",
+    "path": "diagrams/verified/uc_module_3.png",
+    "bounds": [
+      -5.0,
+      -15,
+      1254.0,
+      1100
+    ]
+  },
+  {
+    "id": "uc_module_4",
+    "title": "Use Case phân hệ Cộng tác",
+    "kind": "Use Case",
+    "path": "diagrams/verified/uc_module_4.png",
+    "bounds": [
+      -5.0,
+      -15,
+      950.0,
+      665
+    ]
+  },
+  {
+    "id": "uc_module_5",
+    "title": "Use Case phân hệ AI theo tài liệu",
+    "kind": "Use Case",
+    "path": "diagrams/verified/uc_module_5.png",
+    "bounds": [
+      -5.0,
+      -15,
+      1325.0,
+      810
+    ]
+  },
+  {
+    "id": "uc_module_6",
+    "title": "Use Case phân hệ Năng lực và phân tích",
+    "kind": "Use Case",
+    "path": "diagrams/verified/uc_module_6.png",
+    "bounds": [
+      -30,
+      -15,
+      975,
+      607
+    ]
+  },
+  {
+    "id": "seq_01",
+    "title": "Sequence Đăng ký tài khoản",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_01.png",
+    "bounds": [
+      -25,
+      -25,
+      785,
+      615
+    ]
+  },
+  {
+    "id": "seq_02",
+    "title": "Sequence Đăng nhập và token_version",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_02.png",
+    "bounds": [
+      -25,
+      -25,
+      785,
+      855
+    ]
+  },
+  {
+    "id": "seq_03",
+    "title": "Sequence Luân phiên refresh token",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_03.png",
+    "bounds": [
+      -45,
+      -25,
+      825,
+      1180
+    ]
+  },
+  {
+    "id": "seq_04",
+    "title": "Sequence Khôi phục và đổi mật khẩu",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_04.png",
+    "bounds": [
+      -25,
+      -25,
+      970,
+      1615
+    ]
+  },
+  {
+    "id": "seq_05",
+    "title": "Sequence Tạo workspace và project",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_05.png",
+    "bounds": [
+      -25,
+      -25,
+      785,
+      1167
+    ]
+  },
+  {
+    "id": "seq_06",
+    "title": "Sequence Gửi và phản hồi lời mời",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_06.png",
+    "bounds": [
+      -25,
+      -25,
+      970,
+      1623
+    ]
+  },
+  {
+    "id": "seq_07",
+    "title": "Sequence Tạo task và snapshot ước lượng",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_07.png",
+    "bounds": [
+      -25,
+      -25,
+      970,
+      1231
+    ]
+  },
+  {
+    "id": "seq_08",
+    "title": "Sequence Cập nhật task không khóa Project",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_08.png",
+    "bounds": [
+      -45,
+      -25,
+      1010,
+      1463
+    ]
+  },
+  {
+    "id": "seq_09",
+    "title": "Sequence Di chuyển Kanban với khóa cột",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_09.png",
+    "bounds": [
+      -45,
+      -25,
+      1195,
+      1868
+    ]
+  },
+  {
+    "id": "seq_10",
+    "title": "Sequence Xóa task và thu gọn cột",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_10.png",
+    "bounds": [
+      -25,
+      -25,
+      970,
+      1231
+    ]
+  },
+  {
+    "id": "seq_11",
+    "title": "Sequence Subtask và thời gian thực tế",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_11.png",
+    "bounds": [
+      -25,
+      -25,
+      785,
+      775
+    ]
+  },
+  {
+    "id": "seq_12",
+    "title": "Sequence Bình luận và nhắc tên",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_12.png",
+    "bounds": [
+      -25,
+      -25,
+      970,
+      1095
+    ]
+  },
+  {
+    "id": "seq_13",
+    "title": "Sequence Thông báo và bù kết nối",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_13.png",
+    "bounds": [
+      -25,
+      -25,
+      785,
+      1407
+    ]
+  },
+  {
+    "id": "seq_14",
+    "title": "Sequence Tải tài liệu vào kho riêng",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_14.png",
+    "bounds": [
+      -45,
+      -25,
+      1010,
+      1396
+    ]
+  },
+  {
+    "id": "seq_15",
+    "title": "Sequence Hỏi dự án theo tài liệu",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_15.png",
+    "bounds": [
+      -45,
+      -25,
+      1195,
+      1124
+    ]
+  },
+  {
+    "id": "seq_16",
+    "title": "Sequence Phân rã và lưu payload AI gốc",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_16.png",
+    "bounds": [
+      -25,
+      -25,
+      970,
+      1086
+    ]
+  },
+  {
+    "id": "seq_17",
+    "title": "Sequence Duyệt AI một lần trong giao dịch",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_17.png",
+    "bounds": [
+      -45,
+      -25,
+      825,
+      1316
+    ]
+  },
+  {
+    "id": "seq_18",
+    "title": "Sequence Ma trận kỹ năng và gợi ý người làm",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_18.png",
+    "bounds": [
+      -25,
+      -25,
+      970,
+      991
+    ]
+  },
+  {
+    "id": "seq_19",
+    "title": "Sequence Tính tải và MAPE theo dữ liệu thật",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_19.png",
+    "bounds": [
+      -25,
+      -25,
+      970,
+      1101
+    ]
+  },
+  {
+    "id": "seq_20",
+    "title": "Sequence Nhắc deadline và lịch sử hoạt động",
+    "kind": "Sequence",
+    "path": "diagrams/verified/seq_20.png",
+    "bounds": [
+      -25,
+      -25,
+      970,
+      1103
+    ]
+  },
+  {
+    "id": "architecture",
+    "title": "Kiến trúc thành phần đang triển khai",
+    "kind": "Architecture",
+    "path": "diagrams/verified/architecture.png"
+  },
+  {
+    "id": "deployment",
+    "title": "Mô hình triển khai ứng dụng",
+    "kind": "Architecture",
+    "path": "diagrams/verified/deployment.png"
+  },
+  {
+    "id": "erd_overall",
+    "title": "ERD tổng thể đủ 21 bảng",
+    "kind": "ERD",
+    "path": "diagrams/verified/erd_overall.png"
+  },
+  {
+    "id": "erd_1",
+    "title": "ERD chi tiết Danh tính",
+    "kind": "ERD",
+    "path": "diagrams/verified/erd_1.png"
+  },
+  {
+    "id": "erd_2",
+    "title": "ERD chi tiết Workspace và thành viên",
+    "kind": "ERD",
+    "path": "diagrams/verified/erd_2.png"
+  },
+  {
+    "id": "erd_3",
+    "title": "ERD chi tiết Project và thành viên",
+    "kind": "ERD",
+    "path": "diagrams/verified/erd_3.png"
+  },
+  {
+    "id": "erd_4",
+    "title": "ERD chi tiết Lời mời",
+    "kind": "ERD",
+    "path": "diagrams/verified/erd_4.png"
+  },
+  {
+    "id": "erd_5",
+    "title": "ERD chi tiết Cột và task chuẩn hóa",
+    "kind": "ERD",
+    "path": "diagrams/verified/erd_5.png"
+  },
+  {
+    "id": "erd_6",
+    "title": "ERD chi tiết Đầu việc con",
+    "kind": "ERD",
+    "path": "diagrams/verified/erd_6.png"
+  },
+  {
+    "id": "erd_7",
+    "title": "ERD chi tiết Kỹ năng yêu cầu và lịch sử ước lượng",
+    "kind": "ERD",
+    "path": "diagrams/verified/erd_7.png"
+  },
+  {
+    "id": "erd_8",
+    "title": "ERD chi tiết Bình luận và nhắc tên",
+    "kind": "ERD",
+    "path": "diagrams/verified/erd_8.png"
+  },
+  {
+    "id": "erd_9",
+    "title": "ERD chi tiết Thông báo và scope hoạt động",
+    "kind": "ERD",
+    "path": "diagrams/verified/erd_9.png"
+  },
+  {
+    "id": "erd_10",
+    "title": "ERD chi tiết AI và tài liệu",
+    "kind": "ERD",
+    "path": "diagrams/verified/erd_10.png"
+  },
+  {
+    "id": "erd_11",
+    "title": "ERD chi tiết Kỹ năng thành viên",
+    "kind": "ERD",
+    "path": "diagrams/verified/erd_11.png"
+  },
+  {
+    "id": "state_task",
+    "title": "Vòng đời công việc trên Kanban",
+    "kind": "State",
+    "path": "diagrams/verified/state_task.png"
+  },
+  {
+    "id": "state_invitation",
+    "title": "Trạng thái lời mời và quyền truy cập",
+    "kind": "State",
+    "path": "diagrams/verified/state_invitation.png"
+  },
+  {
+    "id": "state_ai",
+    "title": "Vòng đời bản nháp AI và dữ liệu gốc",
+    "kind": "State",
+    "path": "diagrams/verified/state_ai.png"
+  },
+  {
+    "id": "bpmn_invitation",
+    "title": "BPMN mời và chấp thuận tham gia",
+    "kind": "BPMN",
+    "path": "diagrams/verified/bpmn_invitation.png",
+    "bounds": [
+      -35,
+      -25,
+      1030,
+      1530
+    ]
+  },
+  {
+    "id": "bpmn_kanban",
+    "title": "BPMN cập nhật tiến độ Kanban",
+    "kind": "BPMN",
+    "path": "diagrams/verified/bpmn_kanban.png",
+    "bounds": [
+      -35,
+      -25,
+      1047.96875,
+      1530
+    ]
+  },
+  {
+    "id": "bpmn_ai",
+    "title": "BPMN hiểu tài liệu và duyệt kế hoạch AI",
+    "kind": "BPMN",
+    "path": "diagrams/verified/bpmn_ai.png",
+    "bounds": [
+      -35,
+      -25,
+      1100,
+      2045
+    ]
+  },
+  {
+    "id": "bpmn_recovery",
+    "title": "BPMN khôi phục quyền truy cập",
+    "kind": "BPMN",
+    "path": "diagrams/verified/bpmn_recovery.png",
+    "bounds": [
+      -35,
+      -25,
+      1100,
+      1655
+    ]
+  },
+  {
+    "id": "bpmn_deadline",
+    "title": "BPMN nhắc hạn và đọc thông báo",
+    "kind": "BPMN",
+    "path": "diagrams/verified/bpmn_deadline.png",
+    "bounds": [
+      -35,
+      -25,
+      1030,
+      1400
+    ]
+  },
+  {
+    "id": "ui_auth",
+    "title": "Wireframe Đăng nhập",
+    "kind": "UI",
+    "path": "diagrams/verified/ui_auth.png",
+    "bounds": [
+      -35,
+      -35,
+      1270,
+      980
+    ]
+  },
+  {
+    "id": "ui_dashboard",
+    "title": "Wireframe Tổng quan",
+    "kind": "UI",
+    "path": "diagrams/verified/ui_dashboard.png",
+    "bounds": [
+      -35,
+      -35,
+      1270,
+      980
+    ]
+  },
+  {
+    "id": "ui_board",
+    "title": "Wireframe Kanban",
+    "kind": "UI",
+    "path": "diagrams/verified/ui_board.png",
+    "bounds": [
+      -35,
+      -35,
+      1270,
+      980
+    ]
+  },
+  {
+    "id": "ui_task",
+    "title": "Wireframe Chi tiết công việc",
+    "kind": "UI",
+    "path": "diagrams/verified/ui_task.png",
+    "bounds": [
+      -35,
+      -35,
+      1270,
+      980
+    ]
+  },
+  {
+    "id": "ui_documents",
+    "title": "Wireframe Trợ lý AI  tài liệu",
+    "kind": "UI",
+    "path": "diagrams/verified/ui_documents.png",
+    "bounds": [
+      -35,
+      -35,
+      1270,
+      980
+    ]
+  },
+  {
+    "id": "ui_ai",
+    "title": "Wireframe Trợ lý AI  hỏi và duyệt",
+    "kind": "UI",
+    "path": "diagrams/verified/ui_ai.png",
+    "bounds": [
+      -35,
+      -35,
+      1270,
+      980
+    ]
+  },
+  {
+    "id": "ui_invitation",
+    "title": "Wireframe Thành viên  lời mời",
+    "kind": "UI",
+    "path": "diagrams/verified/ui_invitation.png",
+    "bounds": [
+      -35,
+      -35,
+      1270,
+      980
+    ]
+  },
+  {
+    "id": "ui_Chi",
+    "title": "Wireframe Kỹ năng",
+    "kind": "UI",
+    "path": "diagrams/verified/ui_Chi.png",
+    "bounds": [
+      -35,
+      -35,
+      1270,
+      980
+    ]
+  },
+  {
+    "id": "ui_analytics",
+    "title": "Wireframe Tải và phân tích",
+    "kind": "UI",
+    "path": "diagrams/verified/ui_analytics.png",
+    "bounds": [
+      -35,
+      -35,
+      1270,
+      980
+    ]
+  },
+  {
+    "id": "ui_notifications",
+    "title": "Wireframe Thông báo",
+    "kind": "UI",
+    "path": "diagrams/verified/ui_notifications.png",
+    "bounds": [
+      -35,
+      -35,
+      1270,
+      980
+    ]
+  }
+]

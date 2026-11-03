@@ -1,0 +1,16 @@
+{
+  "date_utc": "2026-10-13T10:53:51.091076+00:00",
+  "files": 284,
+  "provider_credentials_detected": 0,
+  "private_configuration_files": 0,
+  "excluded": [
+    "runtime configuration",
+    "user data",
+    "uploaded documents",
+    "build outputs",
+    "virtual environments"
+  ],
+  "external_gemini_revocation": "awaiting_account_owner_confirmation",
+  "zip_crc_valid": true,
+  "rar": "replaced"
+}
