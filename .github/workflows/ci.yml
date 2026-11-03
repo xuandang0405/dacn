@@ -97,6 +97,9 @@ jobs:
         with:
           name: website-test-results
           path: test-results/
+      - name: Diagnose container startup failures
+        if: failure()
+        run: docker compose -p dacn-ci -f docker-compose.yml -f docker/compose.mail.yml logs --tail 80 initialize backend
       - name: Stop the test stack
         if: always()
         run: docker compose -p dacn-ci -f docker-compose.yml -f docker/compose.mail.yml down

@@ -12,7 +12,7 @@ Phạm vi: bản đồ án FastAPI/MySQL và Next.js đã chốt. Tất cả d�
 | npm audit tại thời điểm kiểm tra | 0 lỗ hổng được báo cáo | frontend-audit.json |
 | Smoke bốn phân hệ qua HTTP/WebSocket thật | Tất cả đạt | smoke-*.json |
 | Hai phiên trình duyệt chủ sở hữu/thành viên | 1 kịch bản, 10 bước nghiệp vụ đạt | browser-summary.json, ảnh |
-| Khởi động lại Compose, migration và seed chạy lặp | Đạt, volume giữ dữ liệu | docker compose up --wait |
+| Compose từ volume MySQL mới, migration/seed; khởi động lại giữ dữ liệu | Đạt | docker compose up --wait |
 
 Tệp bằng chứng nằm tại [docs/final-verification](docs/final-verification). JUnit hiện một cảnh báo deprecation của Starlette TestClient/httpx, không phải lỗi kiểm thử; chưa nâng client transport ngoài bộ dependency đã xác nhận.
 
@@ -26,6 +26,7 @@ Tệp bằng chứng nằm tại [docs/final-verification](docs/final-verificati
 - Chấm kỹ năng 0 xóa rating; lỗi trùng kỹ năng trả 409. Workload rỗng vẫn đủ trường. MAPE dựa trên task Done/actual > 0 và snapshot estimate dương đầu tiên, không đổi theo estimate sửa về sau.
 - VI/EN áp dụng cho lỗi API, vai trò, cột mặc định, hoạt động và thông báo. Ngày giờ UTC từ API được hiển thị theo múi giờ trình duyệt. Nút có type rõ ràng; drawer có focus và hỗ trợ bàn phím.
 - Next.js cập nhật bản vá; backend cố định dependency; frontend Docker chạy standalone bằng user node. run.bat cập nhật dependency khi lockfile đổi, dùng UTF-8 trong đường dẫn tiếng Việt và giữ một console.
+- Healthcheck MySQL dùng TCP và truy vấn SELECT 1 bằng tài khoản/database ứng dụng; tránh mysqladmin ping báo sẵn sàng trong lúc MySQL còn khởi tạo lần đầu.
 
 ## Tải API và realtime
 
