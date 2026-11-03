@@ -2,6 +2,7 @@ from datetime import date, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from app.db import get_db
 from app.models import Activity, KanbanColumn, MemberSkill, Project, Skill, Task, User, WorkspaceMember
 from app.schemas import SkillIn, SkillLevelIn
@@ -24,7 +25,11 @@ def add_skill(workspace_id: int, data: SkillIn, user: User = Depends(current_use
         raise HTTPException(409, "Skill already exists")
     s = Skill(workspace_id=workspace_id, name=data.name.strip())
     db.add(s)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "Skill already exists")
     db.refresh(s)
     return {"id": s.id, "name": s.name}
 
@@ -37,7 +42,10 @@ def set_skill_level(skill_id: int, data: SkillLevelIn, user: User = Depends(curr
     if not db.scalar(select(WorkspaceMember).where(WorkspaceMember.workspace_id == skill.workspace_id, WorkspaceMember.user_id == data.user_id, WorkspaceMember.status == "ACTIVE")):
         raise HTTPException(422, "User is not a member")
     row = db.scalar(select(MemberSkill).where(MemberSkill.skill_id == skill_id, MemberSkill.user_id == data.user_id))
-    if row:
+    if data.level == 0:
+        if row:
+            db.delete(row)
+    elif row:
         row.level = data.level
     else:
         db.add(MemberSkill(skill_id=skill_id, user_id=data.user_id, level=data.level))

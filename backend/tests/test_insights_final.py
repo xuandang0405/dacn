@@ -15,6 +15,17 @@ def test_workload_without_tasks_has_complete_capacity_status(client):
     assert weekend["percentage"] is None and weekend["status"] == "NO_CAPACITY"
 
 
+def test_skill_can_be_returned_to_unrated_without_storing_zero(client):
+    owner, workspace, _, _ = team(client)
+    user_id = client.get("/api/v1/auth/me", headers=owner).json()["id"]
+    skill = client.post(f"/api/v1/workspaces/{workspace['id']}/skills", json={"name": "Python"}, headers=owner).json()
+    path = f"/api/v1/skills/{skill['id']}/members"
+    assert client.put(path, json={"user_id": user_id, "level": 3}, headers=owner).status_code == 200
+    assert client.put(path, json={"user_id": user_id, "level": 0}, headers=owner).status_code == 200
+    matrix = client.get(f"/api/v1/workspaces/{workspace['id']}/skills", headers=owner).json()
+    assert matrix["levels"] == []
+
+
 def test_mape_uses_done_tasks_and_original_approved_estimate(client):
     owner, _, project, columns = team(client)
     task = client.post(f"/api/v1/projects/{project['id']}/tasks", json={"title": "Baseline", "estimated_hours": 4, "actual_hours": 8}, headers=owner).json()
