@@ -52,12 +52,14 @@ export default function Overview({
   mode?: "dashboard" | "workload" | "analytics";
   onOpenProject: (p: Project) => void;
 }) {
-  const { language, t } = useLanguage();
+  const { language, t, message: messageText } = useLanguage();
   const [data, setData] = useState<Dashboard | null>(null);
   const [analytics, setAnalytics] = useState<Record<number, Analytics>>({});
   const [people, setPeople] = useState<Member[]>([]);
   const [error, setError] = useState("");
-  const [analyticsErrors, setAnalyticsErrors] = useState<Record<number, string>>({});
+  const [analyticsErrors, setAnalyticsErrors] = useState<
+    Record<number, string>
+  >({});
   useEffect(() => {
     let active = true;
     setData(null);
@@ -66,32 +68,48 @@ export default function Overview({
     setAnalyticsErrors({});
     api
       .get<Dashboard>(`/workspaces/${workspace.id}/dashboard`)
-      .then((value) => { if (active) setData(value); })
-      .catch((e) => { if (active) setError(e.message); });
+      .then((value) => {
+        if (active) setData(value);
+      })
+      .catch((e) => {
+        if (active) setError(e.message);
+      });
     api
       .get<Member[]>(`/workspaces/${workspace.id}/members`)
-      .then((value) => { if (active) setPeople(value); })
-      .catch((e) => { if (active) setError(e.message); });
+      .then((value) => {
+        if (active) setPeople(value);
+      })
+      .catch((e) => {
+        if (active) setError(e.message);
+      });
     Promise.all(
       projects.map((p) =>
         api
           .get<Analytics>(`/projects/${p.id}/analytics`)
           .then((a) => [p.id, a] as const)
           .catch((e) => {
-            if (active) setAnalyticsErrors((errors) => ({ ...errors, [p.id]: e.message }));
+            if (active)
+              setAnalyticsErrors((errors) => ({
+                ...errors,
+                [p.id]: e.message,
+              }));
             return null;
           }),
       ),
-    ).then((rows) =>
-      active && setAnalytics(
-        Object.fromEntries(
-          rows.filter((x): x is readonly [number, Analytics] => x !== null),
+    ).then(
+      (rows) =>
+        active &&
+        setAnalytics(
+          Object.fromEntries(
+            rows.filter((x): x is readonly [number, Analytics] => x !== null),
+          ),
         ),
-      ),
     );
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [workspace.id, projects]);
-  if (error) return <div className="error">{error}</div>;
+  if (error) return <div className="error">{messageText(error)}</div>;
   if (!data)
     return (
       <div className="skeleton-stack">
@@ -197,7 +215,9 @@ export default function Overview({
                     </p>
                     <div className="metric-row">
                       <div>
-                        <small>{t("Ước lượng hiện tại", "Current estimate")}</small>
+                        <small>
+                          {t("Ước lượng hiện tại", "Current estimate")}
+                        </small>
                         <strong>{a.estimated_hours}h</strong>
                       </div>
                       <div>
@@ -207,7 +227,9 @@ export default function Overview({
                       <div>
                         <small>MAPE</small>
                         <strong>
-                          {a.mape === null ? t("Chưa đủ dữ liệu", "Insufficient data") : `${a.mape}%`}
+                          {a.mape === null
+                            ? t("Chưa đủ dữ liệu", "Insufficient data")
+                            : `${a.mape}%`}
                         </strong>
                       </div>
                     </div>
@@ -221,10 +243,17 @@ export default function Overview({
                         ? t("Chưa đủ dữ liệu", "Insufficient data")
                         : `${a.human_mape}%`}
                     </p>
-                    <p className="muted">{a.mape_sample_count} {t("công việc đủ điều kiện", "eligible tasks")}</p>
+                    <p className="muted">
+                      {a.mape_sample_count}{" "}
+                      {t("công việc đủ điều kiện", "eligible tasks")}
+                    </p>
                   </>
                 ) : (
-                  <p>{analyticsErrors[p.id] || t("Đang tải…", "Loading…")}</p>
+                  <p>
+                    {analyticsErrors[p.id]
+                      ? messageText(analyticsErrors[p.id])
+                      : t("Đang tải…", "Loading…")}
+                  </p>
                 )}
               </button>
             );

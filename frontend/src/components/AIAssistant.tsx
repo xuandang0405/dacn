@@ -11,46 +11,6 @@ type Suggestion = {
   workload_percent: number | null;
   overloaded: boolean;
 };
-const aiErrorsVi: Record<string, string> = {
-  "Project already has the maximum of 3 documents":
-    "Dự án đã có tối đa 3 tài liệu.",
-  "Document is empty": "Tài liệu trống.",
-  "Document exceeds the 8 MB limit": "Tài liệu vượt giới hạn 8 MB.",
-  "Invalid PDF file": "Tệp PDF không hợp lệ.",
-  "PDF must be readable, unencrypted, and at most 100 pages":
-    "PDF phải đọc được, không mã hóa và tối đa 100 trang.",
-  "Invalid or oversized DOCX file": "Tệp DOCX không hợp lệ hoặc quá lớn.",
-  "Text files must use UTF-8": "Tệp văn bản phải dùng UTF-8.",
-  "Supported files: PDF, DOCX, TXT, MD": "Chỉ hỗ trợ PDF, DOCX, TXT và MD.",
-  "Document contains no readable text": "Tài liệu không có văn bản đọc được.",
-  "Document text exceeds the 100,000 character limit":
-    "Văn bản vượt giới hạn 100.000 ký tự.",
-  "Upload a project document before asking AI":
-    "Hãy tải tài liệu của dự án lên trước khi hỏi AI.",
-  "Only the uploader or a manager may remove this document":
-    "Chỉ người tải lên hoặc quản lý được xóa tài liệu này.",
-  "Gemini API key is not configured": "Chưa cấu hình khóa Gemini API.",
-  "Gemini API key was rejected": "Khóa Gemini API bị từ chối.",
-  "Gemini rate limit or quota reached; please retry later":
-    "Gemini đã đạt giới hạn lượt gọi; hãy thử lại sau.",
-  "Gemini is temporarily unavailable; please retry":
-    "Gemini tạm thời không khả dụng; hãy thử lại.",
-  "Gemini timed out": "Gemini hết thời gian chờ; hãy thử lại.",
-  "Gemini rejected the request": "Gemini từ chối yêu cầu.",
-  "Gemini returned an invalid response; please retry":
-    "Gemini trả kết quả không hợp lệ; hãy thử lại.",
-  "Gemini returned an invalid plan; please retry":
-    "Gemini trả kế hoạch không hợp lệ; hãy thử lại.",
-};
-function aiError(message: string, language: "vi" | "en") {
-  if (language === "en") return message;
-  if (
-    message.startsWith("Gemini model '") &&
-    message.endsWith(" is unavailable; update GEMINI_MODEL")
-  )
-    return "Model Gemini không khả dụng; hãy cập nhật GEMINI_MODEL.";
-  return aiErrorsVi[message] || message;
-}
 export default function AIAssistant({
   project,
   projects,
@@ -62,7 +22,7 @@ export default function AIAssistant({
   onSelectProject: (p: Project) => void;
   onCreated: () => void;
 }) {
-  const { language, t: tr } = useLanguage();
+  const { language, t: tr, message: messageText } = useLanguage();
   const [story, setStory] = useState("");
   const [plan, setPlan] = useState<AIPlan | null>(null);
   const [requestId, setRequestId] = useState<number | null>(null);
@@ -317,7 +277,7 @@ export default function AIAssistant({
       </div>
       {error && (
         <div className="error" role="alert">
-          {aiError(error, language)}
+          {messageText(error)}
         </div>
       )}
       <div className="panel ai-form">

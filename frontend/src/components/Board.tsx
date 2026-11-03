@@ -47,7 +47,7 @@ export default function Board({
   onProjectChange: (p: Project) => void;
   onDeleted: () => void;
 }) {
-  const { language, t: tr } = useLanguage();
+  const { language, t: tr, message: messageText } = useLanguage();
   const [columns, setColumns] = useState<Column[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -224,7 +224,8 @@ export default function Board({
       <div className="board-header">
         <div>
           <div className="eyebrow">
-            PROJECT № {String(project.id).padStart(2, "0")} · {enumLabel(project.status, language)}
+            PROJECT № {String(project.id).padStart(2, "0")} ·{" "}
+            {enumLabel(project.status, language)}
           </div>
           <h2>{project.name}</h2>
           <p>
@@ -320,7 +321,7 @@ export default function Board({
       {error && (
         <div className="error">
           <button onClick={() => setError("")}>×</button>
-          {error}
+          {messageText(error)}
         </div>
       )}
       <div className="board-toolbar">
@@ -426,10 +427,7 @@ export default function Board({
                     {t.description && <p>{t.description}</p>}
                     <div className="task-meta">
                       <span
-                        title={tr(
-                          "Ước lượng / Thực tế",
-                          "Estimated / Actual",
-                        )}
+                        title={tr("Ước lượng / Thực tế", "Estimated / Actual")}
                       >
                         <Clock3 size={12} />
                         EST {t.estimated_hours}h · ACT {t.actual_hours}h
@@ -476,7 +474,9 @@ export default function Board({
               placeholder={tr("Tên cột mới", "New column name")}
               required
             />
-            <button className="button subtle">+ {tr("Thêm cột", "Add column")}</button>
+            <button className="button subtle">
+              + {tr("Thêm cột", "Add column")}
+            </button>
           </form>
         </div>
       </div>
@@ -508,7 +508,7 @@ function TaskPanel({
   onClose: () => void;
   onChanged: () => void;
 }) {
-  const { language, t: tr } = useLanguage();
+  const { language, t: tr, message: messageText } = useLanguage();
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description);
   const [priority, setPriority] = useState(task.priority);
@@ -635,7 +635,8 @@ function TaskPanel({
       <div className="drawer">
         <div className="drawer-top">
           <span className="eyebrow">
-            PROJECT № {String(projectId).padStart(2, "0")} // TASK № TSK-{task.id} · REV {task.version} · EST: {task.estimate_source}
+            PROJECT № {String(projectId).padStart(2, "0")} // TASK № TSK-
+            {task.id} · REV {task.version} · EST: {task.estimate_source}
           </span>
           <button
             className="icon-button"
@@ -645,7 +646,7 @@ function TaskPanel({
             <X size={18} />
           </button>
         </div>
-        {error && <div className="error">{error}</div>}
+        {error && <div className="error">{messageText(error)}</div>}
         <form onSubmit={save}>
           <label>
             {tr("Tiêu đề", "Title")}
@@ -740,7 +741,9 @@ function TaskPanel({
         <section className="drawer-section">
           <h3>
             {tr("Công việc con", "Subtasks")}{" "}
-            <span className="count">[{String(subtasks.length).padStart(2, "0")}]</span>
+            <span className="count">
+              [{String(subtasks.length).padStart(2, "0")}]
+            </span>
           </h3>
           {subtasks.map((s) => (
             <label className="subtask-row" key={s.id}>

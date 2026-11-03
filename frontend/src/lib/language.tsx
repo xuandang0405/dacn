@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
+import { messageText } from "./messages";
 
 export type Language = "vi" | "en";
 const labels: Record<string, [string, string]> = {
@@ -33,6 +34,7 @@ type LanguageContextValue = {
   language: Language;
   setLanguage: (language: Language) => void;
   t: (vietnamese: string, english: string) => string;
+  message: (value: string) => string;
 };
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
@@ -55,6 +57,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         language,
         setLanguage,
         t: (vi, en) => (language === "vi" ? vi : en),
+        message: (value) => messageText(value, language),
       }}
     >
       {children}

@@ -17,7 +17,7 @@ export default function Notifications({
   onUnreadChange: (count: number) => void;
   refreshKey: number;
 }) {
-  const { language, t } = useLanguage();
+  const { language, t, message: messageText } = useLanguage();
   const [rows, setRows] = useState<Notification[]>([]);
   const [error, setError] = useState("");
   async function load() {
@@ -61,7 +61,7 @@ export default function Notifications({
           {t("Đánh dấu tất cả đã đọc", "Mark all as read")}
         </button>
       </div>
-      {error && <div className="error">{error}</div>}
+      {error && <div className="error">{messageText(error)}</div>}
       <div className="notification-list">
         {rows.map((n) => (
           <button
@@ -82,7 +82,10 @@ export default function Notifications({
           </button>
         ))}
         {!rows.length && (
-          <p className="muted" style={{ padding: "28px 0", textAlign: "center" }}>
+          <p
+            className="muted"
+            style={{ padding: "28px 0", textAlign: "center" }}
+          >
             {t("Chưa có thông báo nào.", "No notifications yet.")}
           </p>
         )}

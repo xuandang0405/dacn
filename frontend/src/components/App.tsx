@@ -15,7 +15,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { api, base, getToken, logout, refresh } from "@/lib/api";
+import { api, base, getToken, logout, refresh, SESSION_EVENT } from "@/lib/api";
 import type { Project, User, Workspace } from "@/lib/types";
 import InvitationInbox from "./InvitationInbox";
 import Image from "next/image";
@@ -44,7 +44,7 @@ type Section =
   | "settings"
   | "profile";
 export default function App() {
-  const { language, t } = useLanguage();
+  const { language, t, message: messageText } = useLanguage();
   const [boot, setBoot] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -53,12 +53,35 @@ export default function App() {
   const [project, setProject] = useState<Project | null>(null);
   const [section, setSection] = useState<Section>("dashboard");
   const [error, setError] = useState("");
+  const [authNotice, setAuthNotice] = useState("");
   const [mobile, setMobile] = useState(false);
   const [newWorkspace, setNewWorkspace] = useState("");
   const [newProject, setNewProject] = useState("");
   const [unread, setUnread] = useState(0);
   const [online, setOnline] = useState(false);
   const [notificationEvent, setNotificationEvent] = useState(0);
+  useEffect(() => {
+    const end = (event: Event) => {
+      const reason = (event as CustomEvent<string>).detail;
+      setAuthNotice(
+        reason === "logout"
+          ? ""
+          : reason === "password_changed"
+            ? "Password changed. Please log in."
+            : "Your session has ended. Please sign in again.",
+      );
+      setUser(null);
+      setWorkspace(null);
+      setWorkspaces([]);
+      setProjects([]);
+      setProject(null);
+      setUnread(0);
+      setError("");
+      setSection("dashboard");
+    };
+    window.addEventListener(SESSION_EVENT, end);
+    return () => window.removeEventListener(SESSION_EVENT, end);
+  }, []);
   const load = useCallback(async () => {
     try {
       const [me, ws] = await Promise.all([
@@ -66,6 +89,7 @@ export default function App() {
         api.get<Workspace[]>("/workspaces"),
       ]);
       setUser(me);
+      setAuthNotice("");
       setWorkspaces(ws);
       const saved = Number(localStorage.getItem("workspace_id"));
       setWorkspace(ws.find((w) => w.id === saved) || ws[0] || null);
@@ -185,7 +209,7 @@ export default function App() {
         {t("Đang tải không gian làm việc…", "Loading workspace…")}
       </div>
     );
-  if (!user) return <AuthScreen onLogin={load} />;
+  if (!user) return <AuthScreen onLogin={load} notice={authNotice} />;
   const nav: { id: Section; label: string; icon: React.ReactNode }[] = [
     {
       id: "dashboard",
@@ -290,8 +314,16 @@ export default function App() {
           <button
             className="logout"
             onClick={async () => {
-              await logout();
-              setUser(null);
+              try {
+                await logout();
+              } catch {
+                setAuthNotice(
+                  t(
+                    "Đã đăng xuất trên thiết bị. Hãy kiểm tra kết nối trước khi đăng nhập lại.",
+                    "Signed out on this device. Check your connection before signing in again.",
+                  ),
+                );
+              }
             }}
           >
             <LogOut size={17} /> {t("Đăng xuất", "Log out")}
@@ -343,11 +375,16 @@ export default function App() {
           </div>
         </header>
         <main className="content">
-          <InvitationInbox onAccepted={() => { load(); }} refreshKey={notificationEvent} />
+          <InvitationInbox
+            onAccepted={() => {
+              load();
+            }}
+            refreshKey={notificationEvent}
+          />
           {error && (
             <div className="error">
               <button onClick={() => setError("")}>×</button>
-              {error}
+              {messageText(error)}
             </div>
           )}
           {!workspace ? (
@@ -533,6 +570,7 @@ export default function App() {
               )}
               {section === "settings" && (
                 <SettingsPanel
+                  key={workspace.id}
                   workspace={workspace}
                   user={user}
                   onWorkspaceChange={(updated) => {

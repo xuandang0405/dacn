@@ -5,8 +5,14 @@ import logoImg from "@/img/logo.png";
 import { api, setToken } from "@/lib/api";
 import { LanguageSwitch, useLanguage } from "@/lib/language";
 
-export default function AuthScreen({ onLogin }: { onLogin: () => void }) {
-  const { t } = useLanguage();
+export default function AuthScreen({
+  onLogin,
+  notice = "",
+}: {
+  onLogin: () => void;
+  notice?: string;
+}) {
+  const { t, message: messageText } = useLanguage();
   const [mode, setMode] = useState<"login" | "register" | "forgot" | "reset">(
     "login",
   );
@@ -16,13 +22,22 @@ export default function AuthScreen({ onLogin }: { onLogin: () => void }) {
   const [username, setUsername] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  function switchMode(next: typeof mode) {
+    setMode(next);
+    setError("");
+    setSuccess("");
+    setPassword("");
+  }
   useEffect(() => {
     if (new URLSearchParams(window.location.search).has("reset"))
       setMode("reset");
   }, []);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setError("");
+    setSuccess("");
     setBusy(true);
     try {
       if (mode === "register")
@@ -32,7 +47,7 @@ export default function AuthScreen({ onLogin }: { onLogin: () => void }) {
           "/auth/forgot-password",
           { email },
         );
-        setError(result.message);
+        setSuccess(result.message);
         return;
       }
       if (mode === "reset") {
@@ -42,12 +57,8 @@ export default function AuthScreen({ onLogin }: { onLogin: () => void }) {
         });
         window.history.replaceState({}, "", "/");
         setMode("login");
-        setError(
-          t(
-            "Mật khẩu đã đổi. Vui lòng đăng nhập.",
-            "Password changed. Please log in.",
-          ),
-        );
+        setPassword("");
+        setSuccess("Password changed. Please log in.");
         return;
       }
       const token = await api.post<{ access_token: string }>("/auth/login", {
@@ -140,6 +151,7 @@ export default function AuthScreen({ onLogin }: { onLogin: () => void }) {
               {t("Họ tên", "Full name")}
               <input
                 required
+                maxLength={120}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t("Nguyễn Văn A", "Alex Smith")}
@@ -180,13 +192,19 @@ export default function AuthScreen({ onLogin }: { onLogin: () => void }) {
               minLength={
                 mode === "register" || mode === "reset" ? 10 : undefined
               }
+              maxLength={mode === "login" ? undefined : 128}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••••"
             />
           </label>
         )}
-        {error && <div className="error">{error}</div>}
+        {error && <div className="error">{messageText(error)}</div>}
+        {(success || notice) && (
+          <div className="success" role="status">
+            {messageText(success || notice)}
+          </div>
+        )}
         <button className="button primary full" disabled={busy}>
           {busy
             ? t("Đang xử lý…", "Working…")
@@ -201,15 +219,27 @@ export default function AuthScreen({ onLogin }: { onLogin: () => void }) {
         <div className="auth-links">
           {mode === "login" ? (
             <>
-              <button type="button" onClick={() => setMode("register")}>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => switchMode("register")}
+              >
                 {t("Tạo tài khoản", "Create account")}
               </button>
-              <button type="button" onClick={() => setMode("forgot")}>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => switchMode("forgot")}
+              >
                 {t("Quên mật khẩu?", "Forgot password?")}
               </button>
             </>
           ) : (
-            <button type="button" onClick={() => setMode("login")}>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => switchMode("login")}
+            >
               {t("Quay lại đăng nhập", "Back to login")}
             </button>
           )}

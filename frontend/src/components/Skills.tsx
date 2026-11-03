@@ -13,7 +13,7 @@ export default function Skills({
   actorId: number;
   membersOnly?: boolean;
 }) {
-  const { t } = useLanguage();
+  const { t, message: messageText } = useLanguage();
   const [members, setMembers] = useState<Member[]>([]);
   const [matrix, setMatrix] = useState<SkillMatrix>({ skills: [], levels: [] });
   const [email, setEmail] = useState("");
@@ -119,7 +119,7 @@ export default function Skills({
       </div>
       {error && (
         <div className="error" onClick={() => setError("")}>
-          {error}
+          {messageText(error)}
         </div>
       )}
       <div className="panel">
@@ -184,7 +184,9 @@ export default function Skills({
         <div className="panel">
           <div className="panel-header">
             <div>
-              <h3>{t("Bảng kỹ năng chuyên môn", "Skill proficiency matrix")}</h3>
+              <h3>
+                {t("Bảng kỹ năng chuyên môn", "Skill proficiency matrix")}
+              </h3>
               <p className="muted">
                 {t(
                   "Đánh giá mức độ từ 1–5. Chỉ Quản trị viên có quyền cập nhật.",
