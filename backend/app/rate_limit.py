@@ -15,14 +15,16 @@ class SensitiveRateLimit(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
-        if request.method != "POST" or path not in self.limits:
+        key_path = "/api/v1/ai/projects/query" if path.startswith("/api/v1/ai/projects/") and path.endswith("/query") else path
+        limit = 10 if key_path == "/api/v1/ai/projects/query" else self.limits.get(path)
+        if request.method != "POST" or limit is None:
             return await call_next(request)
-        key = (request.client.host if request.client else "unknown", path)
+        key = (request.client.host if request.client else "unknown", key_path)
         now = time.monotonic()
         bucket = self.hits[key]
         while bucket and bucket[0] < now - 60:
             bucket.popleft()
-        if len(bucket) >= self.limits[path]:
+        if len(bucket) >= limit:
             return JSONResponse({"detail": "Too many requests; retry in one minute"}, status_code=429)
         bucket.append(now)
         return await call_next(request)
