@@ -73,6 +73,8 @@ body:
     attributes:
       label: Sản phẩm cần bàn giao
       options:
+        - label: Với yêu cầu phân hệ, có đủ API, frontend và kiểm tra Docker của phân hệ đó.
+          required: true
         - label: Commit và push phần thay đổi lên nhánh được giao.
           required: true
         - label: Mở PR, kèm kết quả kiểm tra và yêu cầu người khác review.

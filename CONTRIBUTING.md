@@ -4,10 +4,12 @@
 
 | Thành viên | Phần việc | Nhánh nhận việc | Issue |
 |---|---|---|---|
-| Nguyễn Xuân Đăng | CSDL, migration, seed | `feature/database-seed` | [#1](https://github.com/xuandang0405/dacn/issues/1) |
-| Phạm Minh Dương | Backend, phân quyền, AI | `feature/backend-ai` | [#2](https://github.com/xuandang0405/dacn/issues/2) |
-| Phạm Tấn Đạt | Realtime, kiểm thử | `feature/realtime-tests` | [#3](https://github.com/xuandang0405/dacn/issues/3) |
-| Trần Đăng Khoa | Frontend, ghép API, bàn giao | `feature/frontend-integration` | [#4](https://github.com/xuandang0405/dacn/issues/4) |
+| Nguyễn Xuân Đăng | Setup GitHub/hạ tầng, CSDL và tích hợp chung | `setup/platform` | [#1](https://github.com/xuandang0405/dacn/issues/1) |
+| Phạm Minh Dương | API + frontend + Docker cho AI/tài liệu | `feature/ai-documents` | [#2](https://github.com/xuandang0405/dacn/issues/2) |
+| Phạm Tấn Đạt | API + frontend + Docker cho Task/Kanban/Realtime | `feature/task-kanban` | [#3](https://github.com/xuandang0405/dacn/issues/3) |
+| Trần Đăng Khoa | API + frontend + Docker cho Skills/Workload/Analytics | `feature/skills-analytics` | [#4](https://github.com/xuandang0405/dacn/issues/4) |
+
+Phân công ngày 04/11 chia theo phân hệ. Dương, Đạt và Khoa mỗi người tự làm API, giao diện và phần Docker của cùng một phân hệ. Đăng setup và tích hợp nền chung. [Gói mã nguồn và danh sách tệp](docs/team/PHAN_CHIA_CODE_FULLSTACK.md).
 
 Mỗi người nhận từng yêu cầu con, đọc điều kiện nghiệm thu, thực hiện thay đổi và tự push bằng tài khoản của mình. Đăng và Dương đã có quyền ghi. Đạt và Khoa được chủ repository bổ sung sau.
 
@@ -31,10 +33,10 @@ cd dacn
 git config user.name "Họ tên của bạn"
 git config user.email "Email GitHub đã xác minh của bạn"
 git fetch origin
-git switch --track origin/feature/backend-ai
+git switch --track origin/feature/ai-documents
 ```
 
-Nếu đã có nhánh ở máy, dùng `git switch feature/backend-ai` rồi `git pull --ff-only`. Khi cần lấy thay đổi chung, chạy `git fetch origin` và `git merge origin/integration/mvp`; xử lý xung đột trước khi push. Không dùng tài khoản, email hoặc commit của người khác để ghi nhận phần việc của mình.
+Nếu đã có nhánh ở máy, dùng `git switch feature/ai-documents` rồi `git pull --ff-only`. Khi cần lấy thay đổi chung, chạy `git fetch origin` và `git merge origin/integration/mvp`; xử lý xung đột trước khi push. Không dùng tài khoản, email hoặc commit của người khác để ghi nhận phần việc của mình.
 
 Mỗi PR nên giải quyết một yêu cầu con. Nếu cần làm nhiều yêu cầu song song, tạo nhánh riêng từ `origin/integration/mvp`, ví dụ `git switch -c feature/so-issue-ten-cong-viec origin/integration/mvp`, rồi push nhánh đó. Không dùng chung một nhánh cho phần việc của hai người.
 
@@ -46,7 +48,7 @@ git status
 git add path/to/changed-file
 git diff --cached
 git commit -m "fix: mo ta thay doi"
-git push -u origin feature/backend-ai
+git push -u origin feature/ai-documents
 ```
 
 Không dùng `git add .` khi chưa rà soát tệp cấu hình và dữ liệu. Không commit `.env`, khóa dịch vụ, token, database, tài liệu người dùng, `.venv`, `node_modules` hoặc thư mục build. Không force push lên nhánh chung.
@@ -60,7 +62,7 @@ Không dùng `git add .` khi chưa rà soát tệp cấu hình và dữ liệu. 
 5. Sửa yêu cầu review và chờ cả `Backend MySQL 8` lẫn `Frontend build` đạt trước khi merge. Push bổ sung có thể làm mất approval cũ.
 6. Sau khi merge, kiểm tra lại tiêu chí issue rồi mới đánh dấu hoàn tất/đóng issue. Trong giai đoạn chuyển nhánh, không dựa vào từ khóa tự đóng issue.
 
-Review hiện tại: Đăng review thay đổi Backend của Dương; Dương review phần CSDL và cấu hình của Đăng. Đạt/Khoa yêu cầu một người phù hợp trong hai người này review cho đến khi nhóm có đủ tài khoản. PR #10 nhập mã nền vào develop cần Dương review trước khi hợp nhất.
+Review hiện tại: Đăng review phần AI/tài liệu của Dương; Dương review setup của Đăng. Đạt/Khoa yêu cầu một người phù hợp trong hai người này review cho đến khi nhóm có đủ tài khoản. Các tệp model/schema, App/API client và Compose chung do Đăng tích hợp; mỗi bạn đề xuất đúng phần cần đổi và phối hợp trước khi merge. PR #10 nhập mã nền vào develop cần Dương review trước khi hợp nhất.
 
 ## Kiểm tra theo phần việc
 

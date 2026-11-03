@@ -10,6 +10,8 @@
 
 [Bảng yêu cầu theo tiêu chí tiến độ của thầy](docs/team/YEU_CAU_TIEN_DO_02.md) chia phần việc theo bốn Lead, yêu cầu con, sản phẩm cần nộp và bằng chứng nghiệm thu. Đăng/Dương đã có quyền ghi; Đạt/Khoa được bổ sung sau. [Issue #8](https://github.com/xuandang0405/dacn/issues/8) là đầu mối tổng hợp hồ sơ.
 
+Phân công ngày 04/11: Đăng setup và tích hợp chung; Dương làm AI/tài liệu, Đạt làm Task/Kanban/Realtime, Khoa làm Skills/Workload/Analytics. Mỗi bạn Dương/Đạt/Khoa làm đủ **API + frontend + Docker** của phân hệ mình. [Gói code theo từng người](docs/team/PHAN_CHIA_CODE_FULLSTACK.md).
+
 ## Kiến trúc đã triển khai
 
 ```mermaid

@@ -20,6 +20,9 @@ Trong đợt khởi tạo, chọn base `integration/mvp`.
 - Luồng đúng / đầu vào sai / quyền truy cập đã kiểm tra:
 - Phần chưa kiểm tra và lý do:
 - Mã commit / môi trường / đường dẫn bằng chứng:
+- API của phân hệ đã kiểm tra:
+- Giao diện của phân hệ đã kiểm tra:
+- Docker: lệnh build/run/smoke test và kết quả:
 
 ## Ảnh hưởng và cách khôi phục
 
