@@ -37,7 +37,9 @@ def prepare(env: dict[str, str]):
         print("Created backend/.env with a random JWT secret.", flush=True)
 
     requirements = BACKEND / "requirements.txt"
-    requirements_hash = hashlib.sha256(requirements.read_bytes()).hexdigest()
+    requirements_hash = hashlib.sha256(
+        requirements.read_bytes() + (BACKEND / "requirements.lock").read_bytes()
+    ).hexdigest()
     stamp = BACKEND / ".venv" / "requirements.sha256"
     if not stamp.exists() or stamp.read_text(encoding="utf-8") != requirements_hash:
         print("Installing backend dependencies...", flush=True)
