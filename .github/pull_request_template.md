@@ -1,21 +1,34 @@
-## Mục tiêu
+## Yêu cầu liên quan
 
-Issue liên quan: #
+Issue: #
+Người thực hiện:
+Loại thay đổi: Backend / Frontend / CSDL / Realtime / Docker / Tài liệu
+
+Trong đợt khởi tạo, chọn base `integration/mvp`.
 
 ## Thay đổi
 
--
+- Vấn đề cần giải quyết:
+- Các tệp hoặc module đã sửa:
+- Kết quả sau thay đổi:
 
 ## Cách kiểm tra
 
 - Lệnh đã chạy và kết quả:
 - Ảnh giao diện hoặc JSON/mã HTTP nếu có:
-- Migration, dữ liệu và API bị ảnh hưởng:
+- Luồng đúng / đầu vào sai / quyền truy cập đã kiểm tra:
+- Phần chưa kiểm tra và lý do:
+
+## Ảnh hưởng và cách khôi phục
+
+- Migration, dữ liệu, cấu hình hoặc API bị ảnh hưởng:
+- Cách khôi phục nếu thay đổi gây lỗi:
 
 ## Rà soát trước khi merge
 
-- [ ] Người thực hiện dùng tài khoản và tác giả commit của chính mình.
-- [ ] Đã kiểm tra luồng đúng, đầu vào sai và quyền truy cập liên quan.
+- [ ] PR có issue và commit của người thực hiện.
+- [ ] Đã ghi kết quả kiểm tra và giới hạn còn lại.
 - [ ] Đã cập nhật hợp đồng API hoặc hướng dẫn nếu thay đổi hành vi.
 - [ ] Không chứa .env thực, khóa dịch vụ, token hoặc dữ liệu cá nhân.
-- [ ] Có người khác trong nhóm review; CI đạt trước khi merge.
+- [ ] Đã yêu cầu một người khác trong nhóm review.
+- [ ] Khi merge: cả hai job CI đạt và hội thoại review đã xử lý.

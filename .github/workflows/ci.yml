@@ -1,9 +1,9 @@
 name: MVP checks
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, "integration/mvp"]
   push:
-    branches: [develop, "codex/**", "feature/**", "fix/**"]
+    branches: [develop, "integration/mvp", "feature/**", "fix/**"]
   workflow_dispatch:
 permissions:
   contents: read

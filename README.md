@@ -4,6 +4,10 @@
 
 [Báo cáo tiến độ lần 2](docs/262701-DACN-01-Nhom3C-BC-02.docx) gồm hiện thực hóa, ảnh chức năng thật, kết quả kiểm thử, phân công và kế hoạch demo.
 
+## Nhận việc và push code
+
+Đọc [CONTRIBUTING.md](CONTRIBUTING.md) trước khi nhận việc. Mỗi thành viên làm trên nhánh được phân công, tự push và mở PR kèm kết quả kiểm tra. Trong đợt khởi tạo, chọn base **integration/mvp**; main/develop chờ bản nền được review. [Danh sách phần việc](https://github.com/xuandang0405/dacn/issues?q=is%3Aissue+is%3Aopen).
+
 ## Kiến trúc đã triển khai
 
 ```mermaid
@@ -120,7 +124,7 @@ Browser E2E: cài Playwright trong môi trường kiểm thử riêng, rồi ch�
 
 Frontend: `npm ci`, `npx tsc --noEmit`, `npm run build`. CI chạy MySQL 8 và frontend build trên PR vào develop/main.
 
-GitHub Actions hiện chưa khởi chạy job vì GitHub báo tài khoản bị khóa do vấn đề thanh toán. Cần chủ tài khoản xử lý rồi chạy lại; chưa có CI Pass. [PR #9](https://github.com/xuandang0405/dacn/pull/9) chứa bản nhập mã để review, chưa merge; khi lấy mã ở thời điểm này hãy chọn nhánh `codex/progress-02`. main/develop mới có commit khởi tạo.
+Lần chạy CI ngày 21/10 bị GitHub chặn khởi chạy vì vấn đề thanh toán tài khoản. Xem tab Actions để kiểm tra kết quả mới nhất; chỉ merge khi hai job bắt buộc đã đạt. Nhánh integration/mvp chứa bản nền và hướng dẫn làm việc; main/develop chờ review trước khi tích hợp.
 
 ## Những phần còn mở
 
@@ -132,4 +136,4 @@ Còn mở: tải MySQL 100 đồng thời, MAPE, chất lượng AI/tiếng Vi�
 
 Không commit .env, khóa Gemini, JWT secret, dữ liệu người dùng, storage, node_modules, .venv hay build output. Khóa đã lộ cần chủ tài khoản thu hồi ở nhà cung cấp; xóa khỏi gói nộp không chứng minh đã thu hồi. Tài khoản demo công khai tách khỏi môi trường thật.
 
-Repository: https://github.com/xuandang0405/dacn. main để bàn giao, develop tích hợp, feature/* cho từng phần việc. Mỗi người tự commit bằng tài khoản của mình; commit nhập mã tự động không thay lịch sử đóng góp. Đạt/Khoa được chủ repo thêm sau.
+Repository: https://github.com/xuandang0405/dacn. Quy trình nhánh, push và review nằm trong [CONTRIBUTING.md](CONTRIBUTING.md). Đạt/Khoa được chủ repository thêm sau.
