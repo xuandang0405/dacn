@@ -37,7 +37,7 @@ def test_mape_uses_done_tasks_and_original_approved_estimate(client):
     result = client.get(path, headers=owner).json()
     assert result["mape"] == 50 and result["human_mape"] == 50
     assert result["mape_sample_count"] == 1 and result["estimated_hours"] == 20
-    assert result["mape_basis"] == "first_committed_estimate"
+    assert result["mape_basis"] == "first_positive_committed_estimate"
 
 
 def test_ai_baseline_keeps_ai_classification_after_human_edit(client):
@@ -64,3 +64,15 @@ def test_ai_baseline_keeps_ai_classification_after_human_edit(client):
     result = client.get(f"/api/v1/projects/{project['id']}/analytics", headers=owner).json()
     assert result["ai_mape"] == 50 and result["human_mape"] is None
     assert result["ai_sample_count"] == 1
+
+
+def test_unestimated_zero_is_not_mistaken_for_the_approved_baseline(client):
+    owner, _, project, columns = team(client)
+    task = client.post(f"/api/v1/projects/{project['id']}/tasks", json={"title": "Created through Kanban"}, headers=owner).json()
+    edited = client.patch(f"/api/v1/tasks/{task['id']}", json={"estimated_hours": 4, "actual_hours": 10, "version": task["version"]}, headers=owner).json()
+    done = next(column for column in columns if column["is_done"])
+    assert client.post(f"/api/v1/tasks/{task['id']}/move", json={"column_id": done["id"], "position": 0, "version": edited["version"]}, headers=owner).status_code == 200
+    unknown = client.post(f"/api/v1/projects/{project['id']}/tasks", json={"title": "Never estimated", "actual_hours": 5}, headers=owner).json()
+    assert client.post(f"/api/v1/tasks/{unknown['id']}/move", json={"column_id": done["id"], "position": 0, "version": unknown["version"]}, headers=owner).status_code == 200
+    result = client.get(f"/api/v1/projects/{project['id']}/analytics", headers=owner).json()
+    assert result["mape"] == 60 and result["mape_sample_count"] == 1

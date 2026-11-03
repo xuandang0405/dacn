@@ -57,7 +57,10 @@ def project_analytics(db: Session, project_id: int):
     history = db.scalars(select(TaskEstimateVersion).where(TaskEstimateVersion.task_id.in_(task_ids)).order_by(TaskEstimateVersion.task_version, TaskEstimateVersion.id)).all() if task_ids else []
     baselines = {}
     for version in history:
-        baselines.setdefault(version.task_id, version)
+        # Kanban creates an unestimated card with zero hours. Its first positive
+        # committed estimate is the approved comparison point, not that placeholder.
+        if float(version.estimated_hours) > 0:
+            baselines.setdefault(version.task_id, version)
     by_status, by_priority = {}, {}
     estimates = []
     estimated_total = 0.0
@@ -83,4 +86,4 @@ def project_analytics(db: Session, project_id: int):
                 by_source[baseline.source].append(comparison)
             if task.assignee_id:
                 by_member.setdefault(task.assignee_id, []).append(comparison)
-    return {"total_tasks": len(rows), "completed_tasks": completed, "overdue_tasks": overdue, "completion_rate": round(completed / len(rows) * 100, 1) if rows else 0, "by_status": by_status, "by_priority": by_priority, "estimated_hours": round(estimated_total, 2), "actual_hours": round(actual_total, 2), "mape": mape(estimates), "mape_by_member": {str(k): mape(v) for k, v in by_member.items()}, "ai_mape": mape(by_source["AI"]), "human_mape": mape(by_source["HUMAN"]), "mape_basis": "first_committed_estimate", "mape_sample_count": len(estimates), "ai_sample_count": len(by_source["AI"]), "human_sample_count": len(by_source["HUMAN"])}
+    return {"total_tasks": len(rows), "completed_tasks": completed, "overdue_tasks": overdue, "completion_rate": round(completed / len(rows) * 100, 1) if rows else 0, "by_status": by_status, "by_priority": by_priority, "estimated_hours": round(estimated_total, 2), "actual_hours": round(actual_total, 2), "mape": mape(estimates), "mape_by_member": {str(k): mape(v) for k, v in by_member.items()}, "ai_mape": mape(by_source["AI"]), "human_mape": mape(by_source["HUMAN"]), "mape_basis": "first_positive_committed_estimate", "mape_sample_count": len(estimates), "ai_sample_count": len(by_source["AI"]), "human_sample_count": len(by_source["HUMAN"])}
