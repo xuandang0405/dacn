@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     jwt_secret: str = Field(min_length=32)
     frontend_origin: str = "http://localhost:3000"
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-3.5-flash"
+    gemini_model: str = ""
     smtp_host: str = ""
     smtp_port: int = 587
     smtp_user: str = ""
