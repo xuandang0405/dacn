@@ -2,6 +2,18 @@
 
 Base URL: http://localhost:8000. Swagger: /docs. OpenAPI 3.1: openapi.generated.json.
 
+## Cập nhật ổn định ngày 18/11/2026
+
+- `POST /projects/{project_id}/tasks` nhận header `Idempotency-Key` (8–128 ký tự ASCII chữ/số và `._:-`). Cùng user/Project/key và payload đã chuẩn hóa trả lại kết quả 201 ban đầu trong 24 giờ. Cùng key nhưng khác nội dung trả 409. Header `Idempotency-Replayed` cho biết kết quả phát lại. Key được lưu trong MySQL cùng giao dịch task/snapshot/activity/notification. Header còn tùy chọn để tương thích client cũ; frontend hiện tự gửi và giữ key khi retry/refresh/reload cùng tab. Không có key thì API giữ hành vi cũ.
+- Trong Postman, giữ nguyên `task_creation_key` khi thử gửi lại; đổi biến này khi muốn tạo công việc mới. Không dùng `{{$guid}}` trực tiếp trong header nếu đang thử retry vì mỗi lần gửi sẽ thành key khác.
+- `PUT /subtasks/{subtask_id}` bắt buộc `version` lấy từ bản subtask vừa đọc. Sai version trả 409; không ghi đè. Đọc lại dữ liệu trước khi sửa tiếp.
+- `GET /projects/{project_id}/tasks?assignee_id=...&include_subtasks=true` trả cả task cha chứa việc con được giao cho người đó; vẫn áp dụng quyền Project, phân trang và tránh trùng task cha.
+- Kênh WebSocket thông báo có thêm `workspace.changed`, payload chỉ có `workspace_id`, để làm mới Dashboard/tải/danh sách cá nhân. Chỉ thành viên ACTIVE của workspace nhận được tín hiệu; dữ liệu chi tiết vẫn được tải qua API có phân quyền.
+- Migration mới `0006`: thêm bảng kỹ thuật `task_creation_requests` và `subtasks.version`. CSDL hiện có 21 bảng nghiệp vụ và một bảng hỗ trợ chống tạo trùng. DB có dữ liệu phải dùng `alembic upgrade head`.
+- `PATCH /workspaces/{workspace_id}/members/{user_id}/capacity` nhận `capacity_hours` là số nguyên 0–168. Chỉ OWNER/ADMIN được sửa; 0 nghĩa là không có năng lực khả dụng. Không đổi vai trò hoặc quyền Project của người nhận. Có trường nhập trong màn hình Thành viên.
+
+Cập nhật trợ lý AI ngày 05/11/2026: query trả context_id để hỏi tiếp hoặc tạo kế hoạch từ câu trả lời. POST /ai/decompose-task nhận context_id thay cho story bắt buộc; kế hoạch trả người nhận đề xuất và cho phép sửa assignee_id khi confirm. GET /ai/projects/{id}/context?language=vi khôi phục trao đổi riêng. Chi tiết trường bổ sung, cache và lỗi 409/422 tại [AI_PLANNING_20261105.md](../AI_PLANNING_20261105.md). OpenAPI kèm theo đã được xuất lại từ ứng dụng.
+
 ## Quy ước
 
 - Authorization: Bearer <access_token>; JWT chứa sub và ver.

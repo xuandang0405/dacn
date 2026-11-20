@@ -1,0 +1,43 @@
+{
+  "date_utc": "2026-11-05T12:46:35.669Z",
+  "fixture": "Synthetic Python API / React task-manager scope, with 180 historical appendix notes; see frontend/tests/e2e/ai-planning.spec.ts",
+  "requested_model": "gemini-3.5-flash",
+  "reported_model": "gemini-3.6-flash",
+  "language": "vi",
+  "analysis_usage": {
+    "model": "gemini-3.6-flash",
+    "input_tokens": 6616,
+    "total_tokens": 7921,
+    "output_tokens": 356,
+    "provider_calls": 1,
+    "thinking_tokens": 949
+  },
+  "context_plan_usage": {
+    "model": "gemini-3.6-flash",
+    "input_tokens": 1278,
+    "total_tokens": 2031,
+    "output_tokens": 753,
+    "provider_calls": 1
+  },
+  "full_document_plan_usage": {
+    "model": "gemini-3.6-flash",
+    "input_tokens": 6720,
+    "total_tokens": 7511,
+    "output_tokens": 791,
+    "provider_calls": 1
+  },
+  "exact_repeat_usage": {
+    "provider_calls": 0,
+    "total_tokens": 0
+  },
+  "input_token_reduction_percent": 80.98,
+  "total_token_reduction_percent": 72.96,
+  "comparison_scope": "Planning step after an answer already exists; excludes the initial analysis cost. One synthetic brief, one paired workflow comparison; not a general accuracy or billing benchmark.",
+  "real_vi_flow": "Draft, automatic assignment, user assignee/title edits, confirmation, database readback and notification assertions passed before the independent English baseline call failed.",
+  "real_en_flow": "Analyze and context-backed plan returned HTTP 200; independent full-document baseline failed with provider 503. No English quality score or token comparison is claimed.",
+  "limits": [
+    "Full live suite not passed: an English baseline call failed with provider 503 after bounded retries.",
+    "A later run was blocked by daily quota. Further provider calls were stopped.",
+    "VI/EN restoration, mobile layout and quota error UX are verified separately with provider stubs; backend persistence and authorization run on real MySQL."
+  ]
+}

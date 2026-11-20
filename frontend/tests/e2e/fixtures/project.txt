@@ -1,0 +1,1 @@
+Smart Task Manager uses FastAPI, MySQL and Next.js. It supports workspaces, invitation consent, Kanban tasks, skills and workload. Project documents must be uploaded before asking AI. AI plans require human review before creating tasks. Payments and inventory are outside the project scope.

@@ -317,6 +317,72 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/members/{user_id}/capacity": {
+      "patch": {
+        "tags": [
+          "Workspaces"
+        ],
+        "summary": "Update weekly member capacity",
+        "operationId": "change_capacity_api_v1_workspaces__workspace_id__members__user_id__capacity_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CapacityIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workspaces": {
       "get": {
         "tags": [
@@ -1429,6 +1495,16 @@
               "default": 50,
               "title": "Size"
             }
+          },
+          {
+            "name": "include_subtasks",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Subtasks"
+            }
           }
         ],
         "responses": {
@@ -1471,6 +1547,25 @@
             "schema": {
               "type": "integer",
               "title": "Project Id"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 8,
+                  "maxLength": 128,
+                  "pattern": "^[A-Za-z0-9._:-]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
             }
           }
         ],
@@ -1935,7 +2030,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SubtaskIn"
+                "$ref": "#/components/schemas/SubtaskUpdate"
               }
             }
           }
@@ -2683,6 +2778,65 @@
         }
       }
     },
+    "/api/v1/ai/projects/{project_id}/context": {
+      "get": {
+        "tags": [
+          "AI assistant"
+        ],
+        "summary": "Restore my recent document-based AI conversation",
+        "operationId": "get_context_api_v1_ai_projects__project_id__context_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "vi",
+                "en"
+              ],
+              "type": "string",
+              "default": "vi",
+              "title": "Language"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/ai/projects/{project_id}/query": {
       "post": {
         "tags": [
@@ -3039,6 +3193,18 @@
             ],
             "title": "Language",
             "default": "vi"
+          },
+          "context_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Id"
           }
         },
         "additionalProperties": false,
@@ -3058,8 +3224,8 @@
           "story": {
             "type": "string",
             "maxLength": 4000,
-            "minLength": 10,
-            "title": "Story"
+            "title": "Story",
+            "default": ""
           },
           "language": {
             "type": "string",
@@ -3069,13 +3235,24 @@
             ],
             "title": "Language",
             "default": "vi"
+          },
+          "context_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Id"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "project_id",
-          "story"
+          "project_id"
         ],
         "title": "AIStory"
       },
@@ -3150,6 +3327,24 @@
             "type": "array",
             "maxItems": 15,
             "title": "Subtasks"
+          },
+          "assignee_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Id"
+          },
+          "assignment_reason": {
+            "type": "string",
+            "maxLength": 600,
+            "title": "Assignment Reason",
+            "default": ""
           }
         },
         "additionalProperties": false,
@@ -3177,6 +3372,22 @@
           "file"
         ],
         "title": "Body_upload_document_api_v1_ai_projects__project_id__documents_post"
+      },
+      "CapacityIn": {
+        "properties": {
+          "capacity_hours": {
+            "type": "integer",
+            "maximum": 168.0,
+            "minimum": 0.0,
+            "title": "Capacity Hours"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "capacity_hours"
+        ],
+        "title": "CapacityIn"
       },
       "ColumnIn": {
         "properties": {
@@ -3314,6 +3525,8 @@
         "properties": {
           "token": {
             "type": "string",
+            "maxLength": 4096,
+            "minLength": 1,
             "title": "Token"
           },
           "accept": {
@@ -3321,6 +3534,7 @@
             "title": "Accept"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "token",
@@ -3699,7 +3913,7 @@
           "level": {
             "type": "integer",
             "maximum": 5.0,
-            "minimum": 1.0,
+            "minimum": 0.0,
             "title": "Level"
           }
         },
@@ -3838,6 +4052,10 @@
           "task_id": {
             "type": "integer",
             "title": "Task Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
           }
         },
         "additionalProperties": false,
@@ -3845,9 +4063,80 @@
         "required": [
           "title",
           "id",
-          "task_id"
+          "task_id",
+          "version"
         ],
         "title": "SubtaskOut"
+      },
+      "SubtaskUpdate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "done": {
+            "type": "boolean",
+            "title": "Done",
+            "default": false
+          },
+          "assignee_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Id"
+          },
+          "estimated_hours": {
+            "type": "number",
+            "maximum": 99999.0,
+            "minimum": 0.0,
+            "title": "Estimated Hours",
+            "default": 0
+          },
+          "actual_hours": {
+            "type": "number",
+            "maximum": 99999.0,
+            "minimum": 0.0,
+            "title": "Actual Hours",
+            "default": 0
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "version"
+        ],
+        "title": "SubtaskUpdate"
       },
       "TaskIn": {
         "properties": {
@@ -4325,11 +4614,5 @@
         "scheme": "bearer"
       }
     }
-  },
-  "servers": [
-    {
-      "url": "http://localhost:8000",
-      "description": "Local development"
-    }
-  ]
+  }
 }

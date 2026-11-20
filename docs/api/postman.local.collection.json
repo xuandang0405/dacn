@@ -11,6 +11,59 @@
     {
       "key": "access_token",
       "value": ""
+    },
+    {
+      "key": "project_id",
+      "value": ""
+    },
+    {
+      "key": "context_id",
+      "value": ""
+    },
+    {
+      "key": "task_creation_key",
+      "value": "demo-task-create-001",
+      "type": "string"
+    },
+    {
+      "key": "workspace_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "task_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "subtask_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "notification_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "skill_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "document_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "request_id",
+      "value": "1",
+      "type": "string"
     }
   ],
   "item": [
@@ -258,7 +311,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}",
+        "url": "{{base_url}}/api/v1/workspaces/{{workspace_id}}",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -282,7 +335,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}",
+        "url": "{{base_url}}/api/v1/workspaces/{{workspace_id}}",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -315,7 +368,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}",
+        "url": "{{base_url}}/api/v1/workspaces/{{workspace_id}}",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -339,7 +392,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/members",
+        "url": "{{base_url}}/api/v1/workspaces/{{workspace_id}}/members",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -363,7 +416,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/members",
+        "url": "{{base_url}}/api/v1/workspaces/{{workspace_id}}/members",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -396,7 +449,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/members/{user_id}",
+        "url": "{{base_url}}/api/v1/workspaces/{{workspace_id}}/members/{{user_id}}",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -429,7 +482,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/members/{user_id}",
+        "url": "{{base_url}}/api/v1/workspaces/{{workspace_id}}/members/{{user_id}}",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -453,7 +506,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/projects",
+        "url": "{{base_url}}/api/v1/workspaces/{{workspace_id}}/projects",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -477,7 +530,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/projects",
+        "url": "{{base_url}}/api/v1/workspaces/{{workspace_id}}/projects",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -510,7 +563,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/projects/{project_id}",
+        "url": "{{base_url}}/api/v1/projects/{{project_id}}",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -534,7 +587,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/projects/{project_id}",
+        "url": "{{base_url}}/api/v1/projects/{{project_id}}",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -567,7 +620,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/projects/{project_id}",
+        "url": "{{base_url}}/api/v1/projects/{{project_id}}",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -591,7 +644,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/projects/{project_id}/members",
+        "url": "{{base_url}}/api/v1/projects/{{project_id}}/members",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -615,7 +668,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/projects/{project_id}/members/{user_id}",
+        "url": "{{base_url}}/api/v1/projects/{{project_id}}/members/{{user_id}}",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -639,7 +692,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/projects/{project_id}/members/{user_id}",
+        "url": "{{base_url}}/api/v1/projects/{{project_id}}/members/{{user_id}}",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -663,7 +716,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/projects/{project_id}/columns",
+        "url": "{{base_url}}/api/v1/projects/{{project_id}}/columns",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -687,7 +740,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/projects/{project_id}/columns",
+        "url": "{{base_url}}/api/v1/projects/{{project_id}}/columns",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -720,7 +773,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/projects/{project_id}/tasks",
+        "url": "{{base_url}}/api/v1/projects/{{project_id}}/tasks",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -742,9 +795,13 @@
           {
             "key": "Origin",
             "value": "http://localhost:3000"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{task_creation_key}}"
           }
         ],
-        "url": "{{base_url}}/api/v1/projects/{project_id}/tasks",
+        "url": "{{base_url}}/api/v1/projects/{{project_id}}/tasks",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -757,7 +814,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{}",
+          "raw": "{\n  \"title\": \"Kiểm thử tạo công việc\",\n  \"estimated_hours\": 3,\n  \"priority\": \"MEDIUM\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -777,7 +834,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/tasks/{task_id}",
+        "url": "{{base_url}}/api/v1/tasks/{{task_id}}",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -801,7 +858,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/tasks/{task_id}",
+        "url": "{{base_url}}/api/v1/tasks/{{task_id}}",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -834,7 +891,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/tasks/{task_id}",
+        "url": "{{base_url}}/api/v1/tasks/{{task_id}}",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -858,7 +915,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/tasks/{task_id}/required-skills",
+        "url": "{{base_url}}/api/v1/tasks/{{task_id}}/required-skills",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -882,7 +939,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/tasks/{task_id}/move",
+        "url": "{{base_url}}/api/v1/tasks/{{task_id}}/move",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -915,7 +972,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/tasks/{task_id}/activity",
+        "url": "{{base_url}}/api/v1/tasks/{{task_id}}/activity",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -939,7 +996,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/tasks/{task_id}/subtasks",
+        "url": "{{base_url}}/api/v1/tasks/{{task_id}}/subtasks",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -963,7 +1020,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/tasks/{task_id}/subtasks",
+        "url": "{{base_url}}/api/v1/tasks/{{task_id}}/subtasks",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -996,7 +1053,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/subtasks/{subtask_id}",
+        "url": "{{base_url}}/api/v1/subtasks/{{subtask_id}}",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -1009,7 +1066,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{}",
+          "raw": "{\n  \"title\": \"Việc con\",\n  \"done\": true,\n  \"version\": 1\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -1029,7 +1086,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/subtasks/{subtask_id}",
+        "url": "{{base_url}}/api/v1/subtasks/{{subtask_id}}",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -1053,7 +1110,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/tasks/{task_id}/comments",
+        "url": "{{base_url}}/api/v1/tasks/{{task_id}}/comments",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -1077,7 +1134,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/tasks/{task_id}/comments",
+        "url": "{{base_url}}/api/v1/tasks/{{task_id}}/comments",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -1158,7 +1215,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/notifications/{notification_id}/read",
+        "url": "{{base_url}}/api/v1/notifications/{{notification_id}}/read",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -1206,7 +1263,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/skills",
+        "url": "{{base_url}}/api/v1/workspaces/{{workspace_id}}/skills",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -1230,7 +1287,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/skills",
+        "url": "{{base_url}}/api/v1/workspaces/{{workspace_id}}/skills",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -1263,7 +1320,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/skills/{skill_id}/members",
+        "url": "{{base_url}}/api/v1/skills/{{skill_id}}/members",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -1296,7 +1353,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/workload",
+        "url": "{{base_url}}/api/v1/workspaces/{{workspace_id}}/workload",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -1320,7 +1377,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/projects/{project_id}/analytics",
+        "url": "{{base_url}}/api/v1/projects/{{project_id}}/analytics",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -1344,7 +1401,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/workspaces/{workspace_id}/dashboard",
+        "url": "{{base_url}}/api/v1/workspaces/{{workspace_id}}/dashboard",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -1368,7 +1425,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/ai/projects/{project_id}/documents",
+        "url": "{{base_url}}/api/v1/ai/projects/{{project_id}}/documents",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -1392,7 +1449,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/ai/projects/{project_id}/documents",
+        "url": "{{base_url}}/api/v1/ai/projects/{{project_id}}/documents",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -1426,7 +1483,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/ai/documents/{document_id}",
+        "url": "{{base_url}}/api/v1/ai/documents/{{document_id}}",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -1450,7 +1507,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/ai/projects/{project_id}/query",
+        "url": "{{base_url}}/api/v1/ai/projects/{{project_id}}/query",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -1496,7 +1553,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{}",
+          "raw": "{\n  \"project_id\": {{project_id}},\n  \"context_id\": {{context_id}},\n  \"story\": \"\",\n  \"language\": \"vi\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -1504,7 +1561,7 @@
           }
         }
       },
-      "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+      "description": "Fill numeric project_id and context_id variables. Uses my stored answer; review returned assignee_id before confirming. For a direct document plan omit context_id and enter a story of at least 10 characters."
     },
     {
       "name": "GET /api/v1/ai/projects/{project_id}/suggest-members",
@@ -1516,7 +1573,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/ai/projects/{project_id}/suggest-members",
+        "url": "{{base_url}}/api/v1/ai/projects/{{project_id}}/suggest-members",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -1540,7 +1597,7 @@
             "value": "http://localhost:3000"
           }
         ],
-        "url": "{{base_url}}/api/v1/ai/requests/{request_id}/confirm",
+        "url": "{{base_url}}/api/v1/ai/requests/{{request_id}}/confirm",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -1633,6 +1690,56 @@
         "url": "{{base_url}}/health"
       },
       "description": "Điền path params và body theo API_Specs.md trước khi gửi."
+    },
+    {
+      "name": "GET /api/v1/ai/projects/{project_id}/context",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/ai/projects/{{project_id}}/context?language=vi",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "description": "Restore only my conversation for the current documents. Save context_id for the next planning request."
+    },
+    {
+      "name": "PATCH member weekly capacity",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{base_url}}/api/v1/workspaces/{{workspace_id}}/members/{{user_id}}/capacity",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"capacity_hours\": 20\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
     }
   ]
 }

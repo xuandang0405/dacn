@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { useLanguage } from "@/lib/language";
+import { enumLabel, useLanguage } from "@/lib/language";
 import type { Member, SkillMatrix, Workspace } from "@/lib/types";
 
 export default function Skills({
@@ -13,73 +13,110 @@ export default function Skills({
   actorId: number;
   membersOnly?: boolean;
 }) {
-  const { t } = useLanguage();
+  const { language, t, message: messageText } = useLanguage();
   const [members, setMembers] = useState<Member[]>([]);
   const [matrix, setMatrix] = useState<SkillMatrix>({ skills: [], levels: [] });
   const [email, setEmail] = useState("");
   const [skill, setSkill] = useState("");
-  const [error, setError] = useState("");
-  const role = members.find((m) => m.user_id === actorId)?.role;
-  const manager = role === "OWNER" || role === "ADMIN";
+  const [loi, datLoi] = useState("");
+  const [thongBao, datThongBao] = useState("");
+  const [dangXuLy, datDangXuLy] = useState(false);
+  const role = members.find((thanhVien) => thanhVien.user_id === actorId)?.role;
+  const laQuanLy = role === "OWNER" || role === "ADMIN";
 
-  async function load() {
+  const taiThanhVienVaKyNang = useCallback(async () => {
     try {
-      const [m, s] = await Promise.all([
+      const [thanhVien, kyNang] = await Promise.all([
         api.get<Member[]>(`/workspaces/${workspace.id}/members`),
         api.get<SkillMatrix>(`/workspaces/${workspace.id}/skills`),
       ]);
-      setMembers(m);
-      setMatrix(s);
-    } catch (e) {
-      setError((e as Error).message);
+      setMembers(thanhVien);
+      setMatrix(kyNang);
+      datLoi("");
+    } catch (loi) {
+      datLoi((loi as Error).message);
+    }
+  }, [workspace.id]);
+  useEffect(() => {
+    taiThanhVienVaKyNang();
+  }, [taiThanhVienVaKyNang]);
+
+  async function thucHienThayDoi(action: () => Promise<void>) {
+    if (dangXuLy) return;
+    datDangXuLy(true);
+    datLoi("");
+    datThongBao("");
+    try {
+      await action();
+      await taiThanhVienVaKyNang();
+    } catch (loi) {
+      datLoi((loi as Error).message);
+    } finally {
+      datDangXuLy(false);
     }
   }
-  useEffect(() => {
-    load();
-  }, [workspace.id]);
 
-  async function invite(e: React.FormEvent) {
-    e.preventDefault();
-    try {
+  async function moiThanhVien(suKien: React.FormEvent) {
+    suKien.preventDefault();
+    await thucHienThayDoi(async () => {
       await api.post(`/workspaces/${workspace.id}/members`, {
         email,
         role: "MEMBER",
       });
       setEmail("");
-      load();
-    } catch (e) {
-      setError((e as Error).message);
-    }
+      datThongBao("Invitation sent. Waiting for acceptance.");
+    });
   }
-  async function addSkill(e: React.FormEvent) {
-    e.preventDefault();
-    try {
+  async function themKyNang(suKien: React.FormEvent) {
+    suKien.preventDefault();
+    await thucHienThayDoi(async () => {
       await api.post(`/workspaces/${workspace.id}/skills`, { name: skill });
       setSkill("");
-      load();
-    } catch (e) {
-      setError((e as Error).message);
-    }
+    });
   }
-  async function level(skill_id: number, user_id: number, value: number) {
-    try {
+  async function doiMucKyNang(
+    skill_id: number,
+    user_id: number,
+    value: number,
+  ) {
+    await thucHienThayDoi(async () => {
       await api.put(`/skills/${skill_id}/members`, { user_id, level: value });
-      load();
-    } catch (e) {
-      setError((e as Error).message);
-    }
+    });
   }
-  async function changeRole(user_id: number, value: string) {
-    try {
+  async function doiVaiTro(user_id: number, value: string) {
+    await thucHienThayDoi(async () => {
       await api.patch(`/workspaces/${workspace.id}/members/${user_id}`, {
         role: value,
       });
-      load();
-    } catch (e) {
-      setError((e as Error).message);
-    }
+    });
   }
-  async function remove(user_id: number) {
+  async function doiNangLuc(thanhVien: Member, oNhap: HTMLInputElement) {
+    const soGio = Number(oNhap.value);
+    if (
+      oNhap.value === "" ||
+      !oNhap.validity.valid ||
+      !Number.isInteger(soGio)
+    ) {
+      oNhap.value = String(thanhVien.capacity_hours);
+      datLoi(
+        t(
+          "Số giờ mỗi tuần phải là số nguyên từ 0 đến 168.",
+          "Weekly hours must be an integer from 0 to 168.",
+        ),
+      );
+      return;
+    }
+    if (soGio === thanhVien.capacity_hours) return;
+    await thucHienThayDoi(async () => {
+      await api.patch(
+        `/workspaces/${workspace.id}/members/${thanhVien.user_id}/capacity`,
+        { capacity_hours: soGio },
+      );
+    });
+    // Nếu request thất bại, không giữ một giá trị chưa lưu trên màn hình.
+    if (oNhap.isConnected) oNhap.value = String(thanhVien.capacity_hours);
+  }
+  async function xoaThanhVien(user_id: number) {
     if (
       !confirm(
         t(
@@ -89,12 +126,9 @@ export default function Skills({
       )
     )
       return;
-    try {
+    await thucHienThayDoi(async () => {
       await api.delete(`/workspaces/${workspace.id}/members/${user_id}`);
-      load();
-    } catch (e) {
-      setError((e as Error).message);
-    }
+    });
   }
 
   return (
@@ -102,8 +136,8 @@ export default function Skills({
       <div className="section-intro">
         <h2>
           {membersOnly
-            ? t("THÀNH VIÊN", "MEMBERS")
-            : t("MA TRẬN KỸ NĂNG", "SKILL MATRIX")}
+            ? t("Thành viên trong nhóm", "Team members")
+            : t("Kỹ năng của nhóm", "Team skills")}
         </h2>
         <p>
           {membersOnly
@@ -117,91 +151,154 @@ export default function Skills({
               )}
         </p>
       </div>
-      {error && (
-        <div className="error" onClick={() => setError("")}>
-          {error}
+      {loi && (
+        <div className="error" role="alert">
+          {messageText(loi)}
+          <button
+            type="button"
+            onClick={() => datLoi("")}
+            aria-label={t("Đóng thông báo", "Dismiss message")}
+          >
+            ×
+          </button>
         </div>
       )}
-      <div className="panel">
-        <div className="panel-header">
-          <h3>
-            {membersOnly
-              ? t("Danh sách thành viên", "Member roster")
-              : t("Thành viên workspace", "Workspace members")}
-          </h3>
+      {thongBao && (
+        <div className="success" role="status">
+          {messageText(thongBao)}
         </div>
-        {manager && (
-          <form className="inline-form" onSubmit={invite}>
-            <input
-              type="email"
-              required
-              placeholder="email@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <button className="button primary">
-              {t("Mời tài khoản", "Invite account")}
-            </button>
-          </form>
-        )}
-        <div className="member-list">
-          {members.map((m) => (
-            <div key={m.user_id}>
-              <span className="avatar small">{m.name[0]}</span>
-              <span>
-                <strong>{m.name}</strong>
-                <small>
-                  @{m.username} · {m.email}
-                </small>
-              </span>
-              {role === "OWNER" && m.role !== "OWNER" ? (
-                <select
-                  aria-label={`${t("Vai trò", "Role")} ${m.name}`}
-                  value={m.role}
-                  onChange={(e) => changeRole(m.user_id, e.target.value)}
-                >
-                  <option>ADMIN</option>
-                  <option>MEMBER</option>
-                </select>
-              ) : (
-                <span className="badge">{m.role}</span>
-              )}
-              {manager &&
-                m.role !== "OWNER" &&
-                (role === "OWNER" || m.role === "MEMBER") && (
-                  <button
-                    className="button danger"
-                    onClick={() => remove(m.user_id)}
-                  >
-                    {t("Xóa", "Remove")}
-                  </button>
+      )}
+      {membersOnly && (
+        <div className="panel">
+          <div className="panel-header">
+            <h3>
+              {membersOnly
+                ? t("Danh sách thành viên", "Member roster")
+                : t("Thành viên workspace", "Workspace members")}
+            </h3>
+          </div>
+          {laQuanLy && (
+            <form className="inline-form" onSubmit={moiThanhVien}>
+              <input
+                type="email"
+                required
+                placeholder="email@company.com"
+                value={email}
+                onChange={(suKien) => setEmail(suKien.target.value)}
+              />
+              <button
+                type="submit"
+                className="button primary"
+                disabled={dangXuLy}
+              >
+                {dangXuLy
+                  ? t("Đang xử lý…", "Working…")
+                  : t("Mời tài khoản", "Invite account")}
+              </button>
+            </form>
+          )}
+          <div className="member-list">
+            {members.map((thanhVien) => (
+              <div key={thanhVien.user_id}>
+                <span className="avatar small">{thanhVien.name[0]}</span>
+                <span>
+                  <strong>{thanhVien.name}</strong>
+                  <small>
+                    @{thanhVien.username} · {thanhVien.email}
+                  </small>
+                </span>
+                {laQuanLy ? (
+                  <label>
+                    {t("Giờ/tuần", "Hours/week")}
+                    <input
+                      key={`${thanhVien.user_id}:${thanhVien.capacity_hours}`}
+                      type="number"
+                      min="0"
+                      max="168"
+                      step="1"
+                      style={{ width: 84 }}
+                      defaultValue={thanhVien.capacity_hours}
+                      disabled={dangXuLy}
+                      aria-label={`${t("Năng lực mỗi tuần", "Weekly capacity")} ${thanhVien.name}`}
+                      onBlur={(suKien) =>
+                        doiNangLuc(thanhVien, suKien.currentTarget)
+                      }
+                    />
+                  </label>
+                ) : (
+                  <small>
+                    {thanhVien.capacity_hours} {t("giờ/tuần", "hours/week")}
+                  </small>
                 )}
-            </div>
-          ))}
+                {role === "OWNER" && thanhVien.role !== "OWNER" ? (
+                  <select
+                    aria-label={`${t("Vai trò", "Role")} ${thanhVien.name}`}
+                    value={thanhVien.role}
+                    disabled={dangXuLy}
+                    onChange={(suKien) =>
+                      doiVaiTro(thanhVien.user_id, suKien.target.value)
+                    }
+                  >
+                    <option value="ADMIN">
+                      {enumLabel("ADMIN", language)}
+                    </option>
+                    <option value="MEMBER">
+                      {enumLabel("MEMBER", language)}
+                    </option>
+                  </select>
+                ) : (
+                  <span className="badge">
+                    {enumLabel(thanhVien.role, language)}
+                  </span>
+                )}
+                {laQuanLy &&
+                  thanhVien.role !== "OWNER" &&
+                  (role === "OWNER" || thanhVien.role === "MEMBER") && (
+                    <button
+                      type="button"
+                      className="button danger"
+                      onClick={() => xoaThanhVien(thanhVien.user_id)}
+                      disabled={dangXuLy}
+                    >
+                      {t("Xóa", "Remove")}
+                    </button>
+                  )}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
       {!membersOnly && (
         <div className="panel">
           <div className="panel-header">
             <div>
-              <h3>{t("Bảng kỹ năng chuyên môn", "Skill proficiency matrix")}</h3>
+              <h3>
+                {t("Bảng kỹ năng chuyên môn", "Skill proficiency matrix")}
+              </h3>
               <p className="muted">
                 {t(
-                  "Đánh giá mức độ từ 1–5. Chỉ Quản trị viên có quyền cập nhật.",
-                  "Proficiency rated 1–5. Managed by administrators.",
+                  "Đánh giá từ 1–5. Chủ sở hữu và quản trị viên có thể cập nhật; chọn chưa chấm để bỏ mức đánh giá.",
+                  "Rate skills from 1–5. Owners and administrators can update ratings; select Unrated to clear one.",
                 )}
               </p>
             </div>
           </div>
-          {manager && (
-            <form className="inline-form" onSubmit={addSkill}>
+          {laQuanLy && (
+            <form className="inline-form" onSubmit={themKyNang}>
               <input
                 required
+                maxLength={100}
                 placeholder={t("Thêm kỹ năng mới", "Add a new skill")}
                 value={skill}
-                onChange={(e) => setSkill(e.target.value)}
+                onChange={(suKien) => setSkill(suKien.target.value)}
               />
-              <button className="button primary">+ {t("Thêm", "Add")}</button>
+              <button
+                type="submit"
+                className="button primary"
+                disabled={dangXuLy}
+              >
+                + {t("Thêm", "Add")}
+              </button>
             </form>
           )}
           <div className="table-scroll">
@@ -209,34 +306,39 @@ export default function Skills({
               <thead>
                 <tr>
                   <th>{t("Thành viên", "Member")}</th>
-                  {matrix.skills.map((s) => (
-                    <th key={s.id}>{s.name}</th>
+                  {matrix.skills.map((kyNang) => (
+                    <th key={kyNang.id}>{kyNang.name}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {members.map((m) => (
-                  <tr key={m.user_id}>
-                    <td>{m.name}</td>
-                    {matrix.skills.map((s) => (
-                      <td key={s.id}>
+                {members.map((thanhVien) => (
+                  <tr key={thanhVien.user_id}>
+                    <td>{thanhVien.name}</td>
+                    {matrix.skills.map((kyNang) => (
+                      <td key={kyNang.id}>
                         <select
-                          disabled={!manager}
-                          aria-label={`${s.name} - ${m.name}`}
+                          disabled={!laQuanLy || dangXuLy}
+                          aria-label={`${kyNang.name} - ${thanhVien.name}`}
                           value={
                             matrix.levels.find(
                               (x) =>
-                                x.skill_id === s.id && x.user_id === m.user_id,
+                                x.skill_id === kyNang.id &&
+                                x.user_id === thanhVien.user_id,
                             )?.level || 0
                           }
-                          onChange={(e) =>
-                            level(s.id, m.user_id, Number(e.target.value))
+                          onChange={(suKien) =>
+                            doiMucKyNang(
+                              kyNang.id,
+                              thanhVien.user_id,
+                              Number(suKien.target.value),
+                            )
                           }
                         >
-                          <option value={0}>—</option>
+                          <option value={0}>{t("Chưa chấm", "Unrated")}</option>
                           {[1, 2, 3, 4, 5].map((n) => (
                             <option key={n} value={n}>
-                              {"■".repeat(n) + "□".repeat(5 - n)} LVL {n}/5
+                              {n} / 5
                             </option>
                           ))}
                         </select>

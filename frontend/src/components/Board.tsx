@@ -1,8 +1,9 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CalendarDays, Clock3, Plus, Settings2, X } from "lucide-react";
-import { api, base, getToken } from "@/lib/api";
+import { api, ApiError, base, getToken, createTask } from "@/lib/api";
 import { enumLabel, useLanguage } from "@/lib/language";
+import { formatTimestamp } from "@/lib/dates";
 import type {
   Column,
   Member,
@@ -15,6 +16,7 @@ import type {
 type Subtask = {
   id: number;
   task_id: number;
+  version: number;
   title: string;
   description: string;
   done: boolean;
@@ -38,162 +40,282 @@ type Activity = {
 };
 export default function Board({
   project,
+  projects,
+  initialTaskId,
+  onSelectProject,
   workspace,
+  actorId,
   onProjectChange,
   onDeleted,
 }: {
   project: Project;
+  projects: Project[];
+  initialTaskId: number | null;
+  onSelectProject: (project: Project) => void;
   workspace: Workspace;
+  actorId: number;
   onProjectChange: (p: Project) => void;
   onDeleted: () => void;
 }) {
-  const { language, t: tr } = useLanguage();
-  const [columns, setColumns] = useState<Column[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [projectMembers, setProjectMembers] = useState<number[]>([]);
-  const [selected, setSelected] = useState<Task | null>(null);
-  const [newTitle, setNewTitle] = useState("");
-  const [newColumn, setNewColumn] = useState("");
-  const [query, setQuery] = useState("");
-  const [priorityFilter, setPriorityFilter] = useState("");
-  const [assigneeFilter, setAssigneeFilter] = useState(0);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [projectName, setProjectName] = useState(project.name);
-  const [projectDescription, setProjectDescription] = useState(
-    project.description,
+  const { language, t: tr, message: messageText } = useLanguage();
+  const [danhSachCot, datDanhSachCot] = useState<Column[]>([]);
+  const [danhSachCongViec, datDanhSachCongViec] = useState<Task[]>([]);
+  const [danhSachThanhVien, datDanhSachThanhVien] = useState<Member[]>([]);
+  const [thanhVienDuAn, datThanhVienDuAn] = useState<number[]>([]);
+  const [congViecDangChon, chonCongViec] = useState<Task | null>(null);
+  const [tenCongViecMoi, datTenCongViecMoi] = useState("");
+  const [nguoiNhanMoi, datNguoiNhanMoi] = useState(0);
+  const [tenCotMoi, datTenCotMoi] = useState("");
+  const [tuKhoa, datTuKhoa] = useState("");
+  const [locUuTien, datLocUuTien] = useState("");
+  const [locNguoiNhan, datLocNguoiNhan] = useState(0);
+  const [loiHienThi, datLoiHienThi] = useState("");
+  const [dangXuLy, datDangXuLy] = useState(false);
+  const [dangTai, datDangTai] = useState(true);
+  const [dangMoCaiDat, datMoCaiDat] = useState(false);
+  const [tenDuAn, datTenDuAn] = useState(project.name);
+  const [moTaDuAn, datMoTaDuAn] = useState(project.description);
+  const [trangThaiDuAn, datTrangThaiDuAn] = useState(project.status);
+  const [lanLamMoi, tangLanLamMoi] = useState(0);
+  const lanTaiMoiNhat = useRef(0);
+  const congViecDaMo = useRef<number | null>(null);
+  const khiMatQuyenDuAn = useRef(onDeleted);
+  useEffect(() => {
+    khiMatQuyenDuAn.current = onDeleted;
+  }, [onDeleted]);
+  const vaiTro = danhSachThanhVien.find(
+    (thanhVien) => thanhVien.user_id === actorId,
+  )?.role;
+  const coQuyenQuanLy = vaiTro === "OWNER" || vaiTro === "ADMIN";
+  const thanhVienCoQuyen = danhSachThanhVien.filter(
+    (thanhVien) =>
+      thanhVien.role !== "MEMBER" || thanhVienDuAn.includes(thanhVien.user_id),
   );
-  const [projectStatus, setProjectStatus] = useState(project.status);
-  const load = useCallback(async () => {
-    try {
-      const [cols, people, pm] = await Promise.all([
-        api.get<Column[]>(`/projects/${project.id}/columns`),
-        api.get<Member[]>(`/workspaces/${workspace.id}/members`),
-        api.get<number[]>(`/projects/${project.id}/members`),
-      ]);
-      const rows: Task[] = [];
-      let page = 1,
-        total = 0;
-      do {
-        const data = await api.get<Paged<Task>>(
-          `/projects/${project.id}/tasks?size=100&page=${page}`,
-        );
-        rows.push(...data.items);
-        total = data.total;
-        page++;
-      } while (rows.length < total && page < 100);
-      setColumns(cols);
-      setTasks(rows);
-      setMembers(people);
-      setProjectMembers(pm);
-      setError("");
-    } catch (e) {
-      setError((e as Error).message);
+  const taiDuLieu = useCallback(
+    async (xoaLoiCu = true) => {
+      const lanTaiHienTai = ++lanTaiMoiNhat.current;
+      try {
+        const [danhSachCot, danhSachThanhVien, thanhVienDuAn] =
+          await Promise.all([
+            api.get<Column[]>(`/projects/${project.id}/columns`),
+            api.get<Member[]>(`/workspaces/${workspace.id}/members`),
+            api.get<number[]>(`/projects/${project.id}/members`),
+          ]);
+        const danhSachCongViec: Task[] = [];
+        let soTrang = 1;
+        let tongCongViec = 0;
+        do {
+          const ketQua = await api.get<Paged<Task>>(
+            `/projects/${project.id}/tasks?size=100&page=${soTrang}`,
+          );
+          danhSachCongViec.push(...ketQua.items);
+          tongCongViec = ketQua.total;
+          soTrang++;
+          if (ketQua.items.length === 0) break;
+        } while (danhSachCongViec.length < tongCongViec && soTrang < 100);
+        // Bỏ kết quả cũ nếu một lượt tải mới hơn đã bắt đầu.
+        if (lanTaiHienTai !== lanTaiMoiNhat.current) return;
+        datDanhSachCot(danhSachCot);
+        datDanhSachCongViec(danhSachCongViec);
+        datDanhSachThanhVien(danhSachThanhVien);
+        datThanhVienDuAn(thanhVienDuAn);
+        chonCongViec((congViecDangMo) => {
+          if (!congViecDangMo) return null;
+          const vanConCongViec = danhSachCongViec.some(
+            (congViec) => congViec.id === congViecDangMo.id,
+          );
+          if (!vanConCongViec) return null;
+          return congViecDangMo;
+        });
+        if (xoaLoiCu) datLoiHienThi("");
+      } catch (loi) {
+        if (lanTaiHienTai === lanTaiMoiNhat.current)
+          datLoiHienThi((loi as Error).message);
+      } finally {
+        if (lanTaiHienTai === lanTaiMoiNhat.current) datDangTai(false);
+      }
+    },
+    [project.id, workspace.id],
+  );
+  useEffect(() => {
+    taiDuLieu();
+    return () => {
+      lanTaiMoiNhat.current++;
+    };
+  }, [taiDuLieu]);
+  useEffect(() => {
+    if (dangTai || !initialTaskId || congViecDaMo.current === initialTaskId)
+      return;
+    const congViec = danhSachCongViec.find(
+      (congViec) => congViec.id === initialTaskId,
+    );
+    if (congViec) {
+      chonCongViec(congViec);
+      congViecDaMo.current = initialTaskId;
     }
-  }, [project.id, workspace.id]);
+  }, [initialTaskId, danhSachCongViec, dangTai]);
   useEffect(() => {
-    load();
-  }, [load]);
+    if (
+      nguoiNhanMoi &&
+      !thanhVienCoQuyen.some((thanhVien) => thanhVien.user_id === nguoiNhanMoi)
+    )
+      datNguoiNhanMoi(0);
+  }, [nguoiNhanMoi, thanhVienCoQuyen]);
   useEffect(() => {
-    let ws: WebSocket | undefined;
-    let closed = false;
-    const connect = () => {
-      const token = getToken();
-      if (!token || closed) return;
-      ws = new WebSocket(
+    let ketNoi: WebSocket | undefined;
+    let daDong = false;
+    const ketNoiLai = () => {
+      const maDangNhap = getToken();
+      if (!maDangNhap || daDong) return;
+      ketNoi = new WebSocket(
         `${base.replace(/^http/, "ws")}/api/v1/ws/projects/${project.id}`,
       );
-      ws.onopen = () => ws?.send(token);
-      ws.onmessage = (e) => {
-        const message = JSON.parse(e.data);
-        if (message.event !== "connected") load();
+      ketNoi.onopen = () => ketNoi?.send(maDangNhap);
+      ketNoi.onmessage = (suKien) => {
+        const thongDiep = JSON.parse(suKien.data);
+        if (thongDiep.event !== "connected") {
+          tangLanLamMoi((value) => value + 1);
+          taiDuLieu(false);
+        }
       };
-      ws.onclose = () => {
-        if (!closed) setTimeout(connect, 2500);
+      ketNoi.onclose = async () => {
+        if (daDong) return;
+        try {
+          await api.get<Project>(`/projects/${project.id}`);
+        } catch (loi) {
+          if (
+            loi instanceof ApiError &&
+            (loi.status === 403 || loi.status === 404)
+          ) {
+            if (!daDong) khiMatQuyenDuAn.current();
+            return;
+          }
+        }
+        if (!daDong) setTimeout(ketNoiLai, 2500);
       };
     };
-    connect();
+    ketNoiLai();
     return () => {
-      closed = true;
-      ws?.close();
+      daDong = true;
+      ketNoi?.close();
     };
-  }, [project.id, load]);
-  async function createTask(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
-    setBusy(true);
+  }, [project.id, taiDuLieu]);
+  async function taoCongViec(suKien: React.FormEvent) {
+    suKien.preventDefault();
+    if (dangXuLy) return;
+    if (!tenCongViecMoi.trim()) {
+      datLoiHienThi(tr("Vui lòng nhập tên công việc.", "Enter a task title."));
+      return;
+    }
+    datLoiHienThi("");
+    datDangXuLy(true);
     try {
-      await api.post(`/projects/${project.id}/tasks`, {
-        title: newTitle.trim(),
-        description: "",
-        priority: "MEDIUM",
-        estimated_hours: 0,
-        actual_hours: 0,
-      });
-      setNewTitle("");
-      await load();
-    } catch (e) {
-      setError((e as Error).message);
+      await createTask(
+        project.id,
+        {
+          title: tenCongViecMoi.trim(),
+          description: "",
+          priority: "MEDIUM",
+          estimated_hours: 0,
+          actual_hours: 0,
+          assignee_id: nguoiNhanMoi || null,
+        },
+        actorId,
+      );
+      datTenCongViecMoi("");
+      await taiDuLieu();
+    } catch (loi) {
+      datLoiHienThi((loi as Error).message);
     } finally {
-      setBusy(false);
+      datDangXuLy(false);
     }
   }
-  async function move(task: Task, column_id: number, position: number) {
-    setBusy(true);
+  async function chuyenCongViec(
+    congViec: Task,
+    column_id: number,
+    position: number,
+  ) {
+    if (dangXuLy) return;
+    datDangXuLy(true);
     try {
-      await api.post(`/tasks/${task.id}/move`, {
+      await api.post(`/tasks/${congViec.id}/move`, {
         column_id,
         position,
-        version: task.version,
+        version: congViec.version,
       });
-      await load();
-    } catch (e) {
-      setError((e as Error).message);
-      await load();
+      await taiDuLieu();
+    } catch (loi) {
+      await taiDuLieu(false);
+      datLoiHienThi((loi as Error).message);
     } finally {
-      setBusy(false);
+      datDangXuLy(false);
     }
   }
-  async function addColumn(e: React.FormEvent) {
-    e.preventDefault();
+  async function themCot(suKien: React.FormEvent) {
+    suKien.preventDefault();
     try {
       await api.post(`/projects/${project.id}/columns`, {
-        name: newColumn,
+        name: tenCotMoi,
         is_done: false,
       });
-      setNewColumn("");
-      load();
-    } catch (e) {
-      setError((e as Error).message);
+      datTenCotMoi("");
+      taiDuLieu();
+    } catch (loi) {
+      datLoiHienThi((loi as Error).message);
     }
   }
-  async function addMember(userId: number) {
+  async function themThanhVien(userId: number) {
+    if (dangXuLy) return;
+    datDangXuLy(true);
+    datLoiHienThi("");
     try {
       await api.post(`/projects/${project.id}/members/${userId}`);
-      load();
-    } catch (e) {
-      setError((e as Error).message);
+      taiDuLieu();
+    } catch (loi) {
+      datLoiHienThi((loi as Error).message);
+    } finally {
+      datDangXuLy(false);
     }
   }
-  async function saveProject(e: React.FormEvent) {
-    e.preventDefault();
+  async function boThanhVien(userId: number) {
+    if (
+      dangXuLy ||
+      !confirm(
+        tr(
+          "Bỏ thành viên khỏi dự án? Các công việc được giao sẽ trở về chưa phân công.",
+          "Remove this project member? Their tasks will become unassigned.",
+        ),
+      )
+    )
+      return;
+    datDangXuLy(true);
+    datLoiHienThi("");
     try {
-      const updated = await api.put<Project>(`/projects/${project.id}`, {
-        name: projectName,
-        description: projectDescription,
-        status: projectStatus,
+      await api.delete(`/projects/${project.id}/members/${userId}`);
+      await taiDuLieu();
+    } catch (loi) {
+      datLoiHienThi((loi as Error).message);
+    } finally {
+      datDangXuLy(false);
+    }
+  }
+  async function luuDuAn(suKien: React.FormEvent) {
+    suKien.preventDefault();
+    try {
+      const duAnDaLuu = await api.put<Project>(`/projects/${project.id}`, {
+        name: tenDuAn,
+        description: moTaDuAn,
+        status: trangThaiDuAn,
         start_date: project.start_date || null,
         end_date: project.end_date || null,
       });
-      onProjectChange(updated);
-      setSettingsOpen(false);
-    } catch (e) {
-      setError((e as Error).message);
+      onProjectChange(duAnDaLuu);
+      datMoCaiDat(false);
+    } catch (loi) {
+      datLoiHienThi((loi as Error).message);
     }
   }
-  async function deleteProject() {
+  async function xoaDuAn() {
     if (
       !confirm(
         tr(
@@ -206,90 +328,156 @@ export default function Board({
     try {
       await api.delete(`/projects/${project.id}`);
       onDeleted();
-    } catch (e) {
-      setError((e as Error).message);
+    } catch (loi) {
+      datLoiHienThi((loi as Error).message);
     }
   }
-  const visibleTasks = tasks.filter(
-    (task) =>
-      (!query ||
-        `${task.title} ${task.description}`
-          .toLocaleLowerCase()
-          .includes(query.toLocaleLowerCase())) &&
-      (!priorityFilter || task.priority === priorityFilter) &&
-      (!assigneeFilter || task.assignee_id === assigneeFilter),
-  );
+  const tuKhoaTim = tuKhoa.toLocaleLowerCase();
+  const congViecHienThi = danhSachCongViec.filter((congViec) => {
+    const noiDungTim =
+      `${congViec.title} ${congViec.description}`.toLocaleLowerCase();
+    if (tuKhoa && !noiDungTim.includes(tuKhoaTim)) return false;
+    if (locUuTien && congViec.priority !== locUuTien) return false;
+    if (locNguoiNhan === -1) return congViec.assignee_id === null;
+    if (locNguoiNhan && congViec.assignee_id !== locNguoiNhan) return false;
+    return true;
+  });
+  if (dangTai)
+    return (
+      <div
+        className="skeleton-stack"
+        role="status"
+        aria-label={tr("Đang tải công việc", "Loading tasks")}
+      >
+        <div />
+        <div />
+        <div />
+      </div>
+    );
   return (
     <>
+      <div className="board-context">
+        <label htmlFor="board-project">
+          {tr("Dự án đang mở", "Current project")}
+        </label>
+        <select
+          id="board-project"
+          value={project.id}
+          onChange={(event) => {
+            const next = projects.find(
+              (congViec) => congViec.id === Number(event.target.value),
+            );
+            if (next) onSelectProject(next);
+          }}
+        >
+          {projects.map((congViec) => (
+            <option key={congViec.id} value={congViec.id}>
+              {congViec.name}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="board-header">
         <div>
-          <div className="eyebrow">
-            PROJECT № {String(project.id).padStart(2, "0")} · {enumLabel(project.status, language)}
-          </div>
+          <div className="eyebrow">{enumLabel(project.status, language)}</div>
           <h2>{project.name}</h2>
           <p>
             {project.description ||
               tr(
                 "Bảng điều phối và theo dõi công việc theo thời gian thực.",
-                "Proofing desk and real-time task ledger.",
+                "Assign work and track your team's progress.",
               )}
           </p>
         </div>
         <div className="board-actions">
-          <button
-            className="button subtle"
-            onClick={() => setSettingsOpen(!settingsOpen)}
-          >
-            <Settings2 size={15} /> {tr("Cài đặt dự án", "Project settings")}
-          </button>
+          {coQuyenQuanLy && (
+            <button
+              type="button"
+              className="button subtle"
+              onClick={() => datMoCaiDat(!dangMoCaiDat)}
+            >
+              <Settings2 size={15} /> {tr("Cài đặt dự án", "Project settings")}
+            </button>
+          )}
           <div className="member-avatars">
-            {members
-              .filter((m) => projectMembers.includes(m.user_id))
+            {danhSachThanhVien
+              .filter((thanhVien) => thanhVienDuAn.includes(thanhVien.user_id))
               .slice(0, 4)
-              .map((m) => (
-                <span key={m.user_id} className="avatar small" title={m.name}>
-                  {m.name[0]}
+              .map((thanhVien) => (
+                <span
+                  key={thanhVien.user_id}
+                  className="avatar small"
+                  title={thanhVien.name}
+                >
+                  {thanhVien.name[0]}
                 </span>
               ))}
           </div>
-          <select
-            aria-label={tr("Thêm thành viên dự án", "Add project member")}
-            value=""
-            onChange={(e) => addMember(Number(e.target.value))}
-          >
-            <option value="">+ {tr("Thành viên", "Member")}</option>
-            {members
-              .filter((m) => !projectMembers.includes(m.user_id))
-              .map((m) => (
-                <option key={m.user_id} value={m.user_id}>
-                  {m.name}
-                </option>
-              ))}
-          </select>
+          {coQuyenQuanLy && (
+            <select
+              disabled={dangXuLy}
+              aria-label={tr("Thêm thành viên dự án", "Add project member")}
+              value=""
+              onChange={(suKien) => themThanhVien(Number(suKien.target.value))}
+            >
+              <option value="">+ {tr("Thành viên", "Member")}</option>
+              {danhSachThanhVien
+                .filter(
+                  (thanhVien) => !thanhVienDuAn.includes(thanhVien.user_id),
+                )
+                .map((thanhVien) => (
+                  <option key={thanhVien.user_id} value={thanhVien.user_id}>
+                    {thanhVien.name}
+                  </option>
+                ))}
+            </select>
+          )}
         </div>
       </div>
-      {settingsOpen && (
-        <form className="panel project-settings" onSubmit={saveProject}>
+      {dangMoCaiDat && coQuyenQuanLy && (
+        <form className="panel project-settings" onSubmit={luuDuAn}>
           <h3>{tr("Cài đặt dự án", "Project settings")}</h3>
+          <div className="member-list">
+            {danhSachThanhVien
+              .filter((thanhVien) => thanhVienDuAn.includes(thanhVien.user_id))
+              .map((thanhVien) => (
+                <div key={thanhVien.user_id}>
+                  <span>{thanhVien.name}</span>
+                  <span className="badge">
+                    {enumLabel(thanhVien.role, language)}
+                  </span>
+                  {thanhVien.role === "MEMBER" && (
+                    <button
+                      type="button"
+                      className="button danger"
+                      disabled={dangXuLy}
+                      onClick={() => boThanhVien(thanhVien.user_id)}
+                    >
+                      {tr("Bỏ khỏi dự án", "Remove from project")}
+                    </button>
+                  )}
+                </div>
+              ))}
+          </div>
           <div className="field-grid">
             <label>
               {tr("Tên dự án", "Project name")}
               <input
                 required
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
+                value={tenDuAn}
+                onChange={(suKien) => datTenDuAn(suKien.target.value)}
               />
             </label>
             <label>
               {tr("Trạng thái", "Status")}
               <select
-                value={projectStatus}
-                onChange={(e) => setProjectStatus(e.target.value)}
+                value={trangThaiDuAn}
+                onChange={(suKien) => datTrangThaiDuAn(suKien.target.value)}
               >
                 {["PLANNING", "ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"].map(
-                  (x) => (
-                    <option key={x} value={x}>
-                      {enumLabel(x, language)}
+                  (congViec) => (
+                    <option key={congViec} value={congViec}>
+                      {enumLabel(congViec, language)}
                     </option>
                   ),
                 )}
@@ -299,57 +487,76 @@ export default function Board({
           <label>
             {tr("Mô tả", "Description")}
             <textarea
-              value={projectDescription}
-              onChange={(e) => setProjectDescription(e.target.value)}
+              value={moTaDuAn}
+              onChange={(suKien) => datMoTaDuAn(suKien.target.value)}
             />
           </label>
           <div className="drawer-actions">
-            <button className="button primary">
+            <button type="submit" className="button primary">
               {tr("Lưu thay đổi", "Save changes")}
             </button>
-            <button
-              type="button"
-              className="button danger"
-              onClick={deleteProject}
-            >
+            <button type="button" className="button danger" onClick={xoaDuAn}>
               {tr("Xóa dự án", "Delete project")}
             </button>
           </div>
         </form>
       )}
-      {error && (
+      {loiHienThi && (
         <div className="error">
-          <button onClick={() => setError("")}>×</button>
-          {error}
+          <button type="button" onClick={() => datLoiHienThi("")}>
+            ×
+          </button>
+          {messageText(loiHienThi)}
         </div>
       )}
       <div className="board-toolbar">
-        <form onSubmit={createTask} className="inline-form">
-          <input
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            placeholder={tr("Tên công việc mới...", "New task title...")}
-            required
-          />
-          <button className="button primary" disabled={busy}>
-            <Plus size={16} /> {tr("Tạo công việc", "Create task")}
+        <form onSubmit={taoCongViec} className="task-create-form">
+          <label className="task-title-field">
+            {tr("Công việc mới", "New task")}
+            <input
+              value={tenCongViecMoi}
+              onChange={(suKien) => datTenCongViecMoi(suKien.target.value)}
+              placeholder={tr("Tên công việc mới...", "New task title...")}
+              maxLength={240}
+              disabled={dangXuLy}
+              required
+            />
+          </label>
+          <label>
+            {tr("Giao cho", "Assign to")}
+            <select
+              aria-label={tr("Giao cho", "Assign to")}
+              value={nguoiNhanMoi}
+              disabled={dangXuLy}
+              onChange={(event) => datNguoiNhanMoi(Number(event.target.value))}
+            >
+              <option value={0}>{tr("Chưa giao", "Unassigned")}</option>
+              {thanhVienCoQuyen.map((thanhVien) => (
+                <option key={thanhVien.user_id} value={thanhVien.user_id}>
+                  {thanhVien.name} (@{thanhVien.username})
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="submit" className="button primary" disabled={dangXuLy}>
+            <Plus size={16} />{" "}
+            {dangXuLy
+              ? tr("Đang lưu…", "Saving…")
+              : tr("Tạo công việc", "Create task")}
           </button>
         </form>
-        <span className="muted">
-          {tasks.length} {tr("công việc", "tasks")}
-        </span>
       </div>
       <div className="board-filters">
         <input
           aria-label={tr("Tìm công việc", "Search tasks")}
           placeholder={tr("Tìm kiếm công việc...", "Search tasks...")}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          value={tuKhoa}
+          onChange={(suKien) => datTuKhoa(suKien.target.value)}
         />
         <select
           aria-label={tr("Lọc ưu tiên", "Filter priority")}
-          value={priorityFilter}
-          onChange={(e) => setPriorityFilter(e.target.value)}
+          value={locUuTien}
+          onChange={(suKien) => datLocUuTien(suKien.target.value)}
         >
           <option value="">{tr("Mọi ưu tiên", "All priorities")}</option>
           {["LOW", "MEDIUM", "HIGH", "URGENT"].map((p) => (
@@ -360,135 +567,179 @@ export default function Board({
         </select>
         <select
           aria-label={tr("Lọc người thực hiện", "Filter assignee")}
-          value={assigneeFilter}
-          onChange={(e) => setAssigneeFilter(Number(e.target.value))}
+          value={locNguoiNhan}
+          onChange={(suKien) => datLocNguoiNhan(Number(suKien.target.value))}
         >
           <option value={0}>{tr("Mọi thành viên", "All members")}</option>
-          {members.map((m) => (
-            <option key={m.user_id} value={m.user_id}>
-              {m.name}
+          <option value={-1}>{tr("Chưa giao", "Unassigned")}</option>
+          {thanhVienCoQuyen.map((thanhVien) => (
+            <option key={thanhVien.user_id} value={thanhVien.user_id}>
+              {thanhVien.name}
             </option>
           ))}
         </select>
       </div>
+      <p className="board-hint muted">
+        {congViecHienThi.length} / {danhSachCongViec.length}{" "}
+        {tr("công việc", "tasks")} ·{" "}
+        {tr(
+          "Bấm vào thẻ để xem và chỉnh sửa.",
+          "Open a card to view or edit it.",
+        )}
+        {!!(tuKhoa || locUuTien || locNguoiNhan) && (
+          <>
+            {" "}
+            {tr(
+              "Bỏ bộ lọc để kéo thả công việc.",
+              "Clear filters to drag tasks.",
+            )}
+          </>
+        )}
+      </p>
       <div className="kanban">
-        {columns.map((col) => {
-          const items = visibleTasks
-            .filter((t) => t.column_id === col.id)
-            .sort((a, b) => a.position - b.position);
+        {danhSachCot.map((cot) => {
+          const congViecTrongCot = congViecHienThi
+            .filter((congViec) => congViec.column_id === cot.id)
+            .sort(
+              (viecTruoc, viecSau) => viecTruoc.position - viecSau.position,
+            );
           return (
-            <div
+            <section
+              aria-label={enumLabel(cot.name, language)}
               className="kanban-column"
-              key={col.id}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (query || priorityFilter || assigneeFilter) return;
-                const id = Number(e.dataTransfer.getData("task-id"));
-                const task = tasks.find((t) => t.id === id);
-                if (task) move(task, col.id, items.length);
+              key={cot.id}
+              onDragOver={(suKien) => suKien.preventDefault()}
+              onDrop={(suKien) => {
+                suKien.preventDefault();
+                if (tuKhoa || locUuTien || locNguoiNhan) return;
+                const maCongViec = Number(
+                  suKien.dataTransfer.getData("task-id"),
+                );
+                const congViec = danhSachCongViec.find(
+                  (congViec) => congViec.id === maCongViec,
+                );
+                if (congViec)
+                  chuyenCongViec(congViec, cot.id, congViecTrongCot.length);
               }}
             >
               <div className="column-head">
-                <span className={`column-dot ${col.is_done ? "done" : ""}`} />
-                <strong>{col.name}</strong>
-                <span className="count">
-                  [{String(items.length).padStart(2, "0")}]
-                </span>
+                <span className={`column-dot ${cot.is_done ? "done" : ""}`} />
+                <strong>{enumLabel(cot.name, language)}</strong>
+                <span className="count">{congViecTrongCot.length}</span>
               </div>
               <div className="column-body">
-                {items.map((t, index) => (
-                  <div
-                    key={t.id}
-                    draggable={!query && !priorityFilter && !assigneeFilter}
-                    onDragStart={(e) =>
-                      e.dataTransfer.setData("task-id", String(t.id))
-                    }
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (query || priorityFilter || assigneeFilter) return;
-                      const id = Number(e.dataTransfer.getData("task-id"));
-                      const task = tasks.find((x) => x.id === id);
-                      if (task) move(task, col.id, index);
-                    }}
-                    className="task-card"
-                    onClick={() => setSelected(t)}
-                  >
-                    <div className="task-card-header">
-                      <span className="task-card-id">№ TSK-{t.id}</span>
-                      <span className={`priority ${t.priority.toLowerCase()}`}>
-                        {enumLabel(t.priority, language)}
-                      </span>
-                    </div>
-                    <h4>{t.title}</h4>
-                    {t.description && <p>{t.description}</p>}
-                    <div className="task-meta">
-                      <span
-                        title={tr(
-                          "Ước lượng / Thực tế",
-                          "Estimated / Actual",
-                        )}
-                      >
-                        <Clock3 size={12} />
-                        EST {t.estimated_hours}h · ACT {t.actual_hours}h
-                      </span>
-                      {t.due_date && (
-                        <span title={tr("Hạn hoàn thành", "Due date")}>
-                          <CalendarDays size={12} />
-                          {t.due_date}
+                {congViecTrongCot.map((congViec, viTri) => {
+                  const thanhVienNhan = danhSachThanhVien.find(
+                    (thanhVien) => thanhVien.user_id === congViec.assignee_id,
+                  );
+                  const tenNguoiNhan =
+                    thanhVienNhan?.name || tr("Chưa giao", "Unassigned");
+                  const chuCaiDau =
+                    thanhVienNhan?.name[0]?.toUpperCase() || "?";
+                  return (
+                    <button
+                      type="button"
+                      key={congViec.id}
+                      draggable={!tuKhoa && !locUuTien && !locNguoiNhan}
+                      onDragStart={(suKien) =>
+                        suKien.dataTransfer.setData(
+                          "task-id",
+                          String(congViec.id),
+                        )
+                      }
+                      onDragOver={(suKien) => suKien.preventDefault()}
+                      onDrop={(suKien) => {
+                        suKien.preventDefault();
+                        suKien.stopPropagation();
+                        if (tuKhoa || locUuTien || locNguoiNhan) return;
+                        const maCongViec = Number(
+                          suKien.dataTransfer.getData("task-id"),
+                        );
+                        const congViec = danhSachCongViec.find(
+                          (congViec) => congViec.id === maCongViec,
+                        );
+                        if (congViec) chuyenCongViec(congViec, cot.id, viTri);
+                      }}
+                      className="task-card"
+                      onClick={() => chonCongViec(congViec)}
+                    >
+                      <div className="task-card-header">
+                        <span className="task-card-id">#{congViec.id}</span>
+                        <span
+                          className={`priority ${congViec.priority.toLowerCase()}`}
+                        >
+                          {enumLabel(congViec.priority, language)}
                         </span>
-                      )}
+                      </div>
+                      <h4>{congViec.title}</h4>
+                      {congViec.description && <p>{congViec.description}</p>}
+                      <div className="task-meta">
+                        <span
+                          title={tr(
+                            "Ước lượng / Thực tế",
+                            "Estimated / Actual",
+                          )}
+                        >
+                          <Clock3 size={12} />
+                          {tr("Ước lượng", "Est.")} {congViec.estimated_hours}h
+                          · {tr("Thực tế", "Actual")} {congViec.actual_hours}h
+                        </span>
+                        {congViec.due_date && (
+                          <span title={tr("Hạn hoàn thành", "Due date")}>
+                            <CalendarDays size={12} />
+                            {congViec.due_date}
+                          </span>
+                        )}
+                      </div>
                       <span
-                        className="avatar tiny"
-                        title={
-                          members.find((m) => m.user_id === t.assignee_id)
-                            ?.name || tr("Chưa giao", "Unassigned")
-                        }
+                        className={`task-assignee ${congViec.assignee_id ? "" : "unassigned"}`}
+                        title={tenNguoiNhan}
                       >
-                        {members
-                          .find((m) => m.user_id === t.assignee_id)
-                          ?.name[0]?.toUpperCase() || "—"}
+                        <span className="avatar tiny">{chuCaiDau}</span>
+                        {tenNguoiNhan}
                       </span>
-                    </div>
-                  </div>
-                ))}
-                {!items.length && (
+                    </button>
+                  );
+                })}
+                {!congViecTrongCot.length && (
                   <div className="column-empty">
-                    [{" "}
-                    {tr(
-                      "Khay trống — Thả task vào đây",
-                      "Empty tray — Drop task here",
-                    )}{" "}
-                    ]
+                    {tr("Chưa có công việc", "No tasks yet")}
                   </div>
                 )}
               </div>
-            </div>
+            </section>
           );
         })}
-        <div className="kanban-add">
-          <form onSubmit={addColumn}>
-            <input
-              value={newColumn}
-              onChange={(e) => setNewColumn(e.target.value)}
-              placeholder={tr("Tên cột mới", "New column name")}
-              required
-            />
-            <button className="button subtle">+ {tr("Thêm cột", "Add column")}</button>
-          </form>
-        </div>
+        {coQuyenQuanLy && (
+          <div className="kanban-add">
+            <form onSubmit={themCot}>
+              <input
+                value={tenCotMoi}
+                onChange={(suKien) => datTenCotMoi(suKien.target.value)}
+                placeholder={tr("Tên cột mới", "New column name")}
+                required
+              />
+              <button type="submit" className="button subtle">
+                + {tr("Thêm cột", "Add column")}
+              </button>
+            </form>
+          </div>
+        )}
       </div>
-      {selected && (
+      {congViecDangChon && (
         <TaskPanel
+          key={congViecDangChon.id}
           projectId={project.id}
-          task={tasks.find((t) => t.id === selected.id) || selected}
-          members={members}
-          onClose={() => setSelected(null)}
-          onChanged={() => {
-            load();
-          }}
+          task={
+            danhSachCongViec.find(
+              (congViec) => congViec.id === congViecDangChon.id,
+            ) || congViecDangChon
+          }
+          columns={danhSachCot}
+          members={thanhVienCoQuyen}
+          refreshKey={lanLamMoi}
+          onClose={() => chonCongViec(null)}
+          onChanged={taiDuLieu}
         />
       )}
     </>
@@ -498,303 +749,677 @@ export default function Board({
 function TaskPanel({
   projectId,
   task,
+  columns,
   members,
+  refreshKey,
   onClose,
   onChanged,
 }: {
   projectId: number;
   task: Task;
+  columns: Column[];
   members: Member[];
+  refreshKey: number;
   onClose: () => void;
-  onChanged: () => void;
+  onChanged: () => Promise<void>;
 }) {
-  const { language, t: tr } = useLanguage();
-  const [title, setTitle] = useState(task.title);
-  const [description, setDescription] = useState(task.description);
-  const [priority, setPriority] = useState(task.priority);
-  const [assignee, setAssignee] = useState(task.assignee_id || 0);
-  const [estimated, setEstimated] = useState(task.estimated_hours);
-  const [actual, setActual] = useState(task.actual_hours);
-  const [due, setDue] = useState(task.due_date || "");
-  const [subtasks, setSubtasks] = useState<Subtask[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [requiredSkills, setRequiredSkills] = useState<string[]>([]);
-  const [newSub, setNewSub] = useState("");
-  const [newComment, setNewComment] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  async function load() {
+  const { language, t: tr, message: messageText } = useLanguage();
+  const [tenCongViec, datTenCongViec] = useState(task.title);
+  const [moTa, datMoTa] = useState(task.description);
+  const [uuTien, datUuTien] = useState(task.priority);
+  const [nguoiNhan, datNguoiNhan] = useState(task.assignee_id || 0);
+  const [gioDuKien, datGioDuKien] = useState(task.estimated_hours);
+  const [gioThucTe, datGioThucTe] = useState(task.actual_hours);
+  const [hanHoanThanh, datHanHoanThanh] = useState(task.due_date || "");
+  const [danhSachViecCon, datDanhSachViecCon] = useState<Subtask[]>([]);
+  const [viecConDangSua, datViecConDangSua] = useState<Subtask | null>(null);
+  const [danhSachBinhLuan, datDanhSachBinhLuan] = useState<Comment[]>([]);
+  const [nhatKy, datNhatKy] = useState<Activity[]>([]);
+  const [kyNangCanCo, datKyNangCanCo] = useState<string[]>([]);
+  const [tenViecConMoi, datTenViecConMoi] = useState("");
+  const [noiDungBinhLuan, datNoiDungBinhLuan] = useState("");
+  const [loiHienThi, datLoiHienThi] = useState("");
+  const [dangXuLy, datDangXuLy] = useState(false);
+  const [coThayDoiChuaLuu, datCoThayDoiChuaLuu] = useState(false);
+  const [phienBanDangSua, datPhienBanDangSua] = useState(task.version);
+  const [coXungDot, datCoXungDot] = useState(false);
+  const [daLuu, datDaLuu] = useState(false);
+  const hopChiTiet = useRef<HTMLDialogElement>(null);
+  function dongChiTiet() {
+    if (dangXuLy) return;
+    if (
+      (coThayDoiChuaLuu || viecConDangSua !== null) &&
+      !confirm(
+        tr(
+          "Bạn có thay đổi chưa lưu. Bỏ thay đổi và đóng?",
+          "You have unsaved changes. Discard them and close?",
+        ),
+      )
+    )
+      return;
+    onClose();
+  }
+  useEffect(() => {
+    const hopThoai = hopChiTiet.current;
+    if (hopThoai && !hopThoai.open) hopThoai.showModal();
+    return () => {
+      hopThoai?.close();
+    };
+  }, []);
+  const taiDuLieu = useCallback(async () => {
     try {
-      const [s, c, a, skills] = await Promise.all([
+      const [viecCon, binhLuan, hoatDong, kyNang] = await Promise.all([
         api.get<Subtask[]>(`/tasks/${task.id}/subtasks`),
         api.get<Comment[]>(`/tasks/${task.id}/comments`),
         api.get<Activity[]>(`/tasks/${task.id}/activity`),
         api.get<string[]>(`/tasks/${task.id}/required-skills`),
       ]);
-      setSubtasks(s);
-      setComments(c);
-      setActivities(a);
-      setRequiredSkills(skills);
-    } catch (e) {
-      setError((e as Error).message);
+      datDanhSachViecCon(viecCon);
+      datDanhSachBinhLuan(binhLuan);
+      datNhatKy(hoatDong);
+      datKyNangCanCo(kyNang);
+    } catch (loi) {
+      datLoiHienThi((loi as Error).message);
     }
-  }
-  useEffect(() => {
-    load();
   }, [task.id]);
   useEffect(() => {
-    setTitle(task.title);
-    setDescription(task.description);
-    setPriority(task.priority);
-    setAssignee(task.assignee_id || 0);
-    setEstimated(task.estimated_hours);
-    setActual(task.actual_hours);
-    setDue(task.due_date || "");
-  }, [task.version]);
-  async function save(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
+    taiDuLieu();
+  }, [taiDuLieu, refreshKey]);
+  useEffect(() => {
+    // Có bản sửa chưa lưu thì không lấy dữ liệu realtime ghi đè form.
+    if (coThayDoiChuaLuu) return;
+    datTenCongViec(task.title);
+    datMoTa(task.description);
+    datUuTien(task.priority);
+    datNguoiNhan(task.assignee_id || 0);
+    datGioDuKien(task.estimated_hours);
+    datGioThucTe(task.actual_hours);
+    datHanHoanThanh(task.due_date || "");
+    datPhienBanDangSua(task.version);
+  }, [task, coThayDoiChuaLuu]);
+  async function luuCongViec(suKien: React.FormEvent) {
+    suKien.preventDefault();
+    if (dangXuLy) return;
+    datLoiHienThi("");
+    datCoXungDot(false);
+    datDangXuLy(true);
     try {
       await api.patch(`/tasks/${task.id}`, {
-        title,
-        description,
-        priority,
-        assignee_id: assignee || null,
-        estimated_hours: Number(estimated),
-        actual_hours: Number(actual),
-        due_date: due || null,
-        version: task.version,
+        title: tenCongViec,
+        description: moTa,
+        priority: uuTien,
+        assignee_id: nguoiNhan || null,
+        estimated_hours: Number(gioDuKien),
+        actual_hours: Number(gioThucTe),
+        due_date: hanHoanThanh || null,
+        version: phienBanDangSua,
       });
-      onChanged();
-    } catch (e) {
-      setError((e as Error).message);
+      await onChanged();
+      datCoThayDoiChuaLuu(false);
+      datDaLuu(true);
+    } catch (loi) {
+      datCoXungDot(loi instanceof ApiError && loi.status === 409);
+      datLoiHienThi((loi as Error).message);
     } finally {
-      setBusy(false);
+      datDangXuLy(false);
     }
   }
-  async function addSub(e: React.FormEvent) {
-    e.preventDefault();
+  async function themViecCon(suKien: React.FormEvent) {
+    suKien.preventDefault();
+    if (dangXuLy) return;
+    datDangXuLy(true);
     try {
       await api.post(`/tasks/${task.id}/subtasks`, {
-        title: newSub,
+        title: tenViecConMoi,
         description: "",
         done: false,
         estimated_hours: 0,
         actual_hours: 0,
       });
-      setNewSub("");
-      load();
-    } catch (e) {
-      setError((e as Error).message);
+      datTenViecConMoi("");
+      await taiDuLieu();
+    } catch (loi) {
+      datLoiHienThi((loi as Error).message);
+    } finally {
+      datDangXuLy(false);
     }
   }
-  async function toggleSub(s: Subtask) {
+  async function doiTrangThaiViecCon(viecCon: Subtask) {
+    if (dangXuLy) return;
+    datDangXuLy(true);
     try {
-      await api.put(`/subtasks/${s.id}`, {
-        title: s.title,
-        description: s.description,
-        done: !s.done,
-        assignee_id: s.assignee_id,
-        estimated_hours: s.estimated_hours,
-        actual_hours: s.actual_hours,
-        due_date: s.due_date,
+      await api.put(`/subtasks/${viecCon.id}`, {
+        version: viecCon.version,
+        title: viecCon.title,
+        description: viecCon.description,
+        done: !viecCon.done,
+        assignee_id: viecCon.assignee_id,
+        estimated_hours: viecCon.estimated_hours,
+        actual_hours: viecCon.actual_hours,
+        due_date: viecCon.due_date,
       });
-      load();
-    } catch (e) {
-      setError((e as Error).message);
+      await taiDuLieu();
+    } catch (loi) {
+      datLoiHienThi((loi as Error).message);
+      if (loi instanceof ApiError && loi.status === 409) await taiDuLieu();
+    } finally {
+      datDangXuLy(false);
     }
   }
-  async function comment(e: React.FormEvent) {
-    e.preventDefault();
+  async function luuViecCon(suKien: React.FormEvent) {
+    suKien.preventDefault();
+    if (!viecConDangSua || dangXuLy) return;
+    datDangXuLy(true);
     try {
-      await api.post(`/tasks/${task.id}/comments`, { content: newComment });
-      setNewComment("");
-      load();
-    } catch (e) {
-      setError((e as Error).message);
+      const duLieu = {
+        title: viecConDangSua.title,
+        description: viecConDangSua.description,
+        done: viecConDangSua.done,
+        assignee_id: viecConDangSua.assignee_id,
+        estimated_hours: viecConDangSua.estimated_hours,
+        actual_hours: viecConDangSua.actual_hours,
+        due_date: viecConDangSua.due_date,
+        version: viecConDangSua.version,
+      };
+      await api.put(`/subtasks/${viecConDangSua.id}`, duLieu);
+      datViecConDangSua(null);
+      await taiDuLieu();
+    } catch (loi) {
+      datLoiHienThi((loi as Error).message);
+      if (loi instanceof ApiError && loi.status === 409) await taiDuLieu();
+    } finally {
+      datDangXuLy(false);
     }
   }
-  async function remove() {
+  async function xoaViecCon(viecCon: Subtask) {
+    if (dangXuLy || !confirm(tr("Xóa việc con này?", "Delete this subtask?")))
+      return;
+    datDangXuLy(true);
+    try {
+      await api.delete(`/subtasks/${viecCon.id}`);
+      await taiDuLieu();
+    } catch (loi) {
+      datLoiHienThi((loi as Error).message);
+    } finally {
+      datDangXuLy(false);
+    }
+  }
+  async function guiBinhLuan(suKien: React.FormEvent) {
+    suKien.preventDefault();
+    if (dangXuLy) return;
+    datDangXuLy(true);
+    try {
+      await api.post(`/tasks/${task.id}/comments`, {
+        content: noiDungBinhLuan,
+      });
+      datNoiDungBinhLuan("");
+      await taiDuLieu();
+    } catch (loi) {
+      datLoiHienThi((loi as Error).message);
+    } finally {
+      datDangXuLy(false);
+    }
+  }
+  async function xoaCongViec() {
+    if (dangXuLy) return;
     if (!confirm(tr("Xóa task này?", "Delete this task?"))) return;
+    datDangXuLy(true);
     try {
       await api.delete(`/tasks/${task.id}`);
       onClose();
       onChanged();
-    } catch (e) {
-      setError((e as Error).message);
+    } catch (loi) {
+      datLoiHienThi((loi as Error).message);
+    } finally {
+      datDangXuLy(false);
     }
   }
   return (
-    <div
+    <dialog
+      ref={hopChiTiet}
+      aria-label={tr("Chi tiết công việc", "Task details")}
+      onCancel={(event) => {
+        event.preventDefault();
+        dongChiTiet();
+      }}
       className="drawer-overlay"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+      onMouseDown={(suKien) => {
+        if (suKien.target === suKien.currentTarget) dongChiTiet();
       }}
     >
       <div className="drawer">
         <div className="drawer-top">
           <span className="eyebrow">
-            PROJECT № {String(projectId).padStart(2, "0")} // TASK № TSK-{task.id} · REV {task.version} · EST: {task.estimate_source}
+            {tr("Công việc", "Task")} #{task.id} · {tr("Dự án", "Project")} #
+            {projectId}
           </span>
           <button
+            type="button"
             className="icon-button"
-            onClick={onClose}
+            disabled={dangXuLy}
+            onClick={dongChiTiet}
             aria-label={tr("Đóng", "Close")}
           >
             <X size={18} />
           </button>
         </div>
-        {error && <div className="error">{error}</div>}
-        <form onSubmit={save}>
-          <label>
-            {tr("Tiêu đề", "Title")}
-            <input
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </label>
-          <label>
-            {tr("Mô tả", "Description")}
-            <textarea
-              rows={4}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </label>
-          <div className="field-grid">
-            <label>
-              {tr("Ưu tiên", "Priority")}
-              <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-              >
-                {["LOW", "MEDIUM", "HIGH", "URGENT"].map((x) => (
-                  <option key={x} value={x}>
-                    {enumLabel(x, language)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              {tr("Người thực hiện", "Assignee")}
-              <select
-                value={assignee}
-                onChange={(e) => setAssignee(Number(e.target.value))}
-              >
-                <option value={0}>{tr("Chưa giao", "Unassigned")}</option>
-                {members.map((m) => (
-                  <option key={m.user_id} value={m.user_id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              {tr("Ước lượng (giờ)", "Estimate (hours)")}
-              <input
-                type="number"
-                min="0"
-                step="0.25"
-                value={estimated}
-                onChange={(e) => setEstimated(Number(e.target.value))}
-              />
-            </label>
-            <label>
-              {tr("Thực tế (giờ)", "Actual (hours)")}
-              <input
-                type="number"
-                min="0"
-                step="0.25"
-                value={actual}
-                onChange={(e) => setActual(Number(e.target.value))}
-              />
-            </label>
-            <label>
-              {tr("Hạn hoàn thành", "Due date")}
-              <input
-                type="date"
-                value={due}
-                onChange={(e) => setDue(e.target.value)}
-              />
-            </label>
+        <h2>{tr("Chi tiết công việc", "Task details")}</h2>
+        {loiHienThi && (
+          <div className="error" role="alert">
+            {messageText(loiHienThi)}
           </div>
-          <div className="drawer-actions">
-            <button className="button primary" disabled={busy}>
-              {tr("Lưu thay đổi", "Save changes")}
-            </button>
-            <button className="button danger" type="button" onClick={remove}>
-              {tr("Xóa", "Delete")}
-            </button>
+        )}
+        {daLuu && !coThayDoiChuaLuu && (
+          <div className="success" role="status">
+            {tr("Đã lưu thay đổi.", "Changes saved.")}
           </div>
+        )}
+        {coThayDoiChuaLuu && task.version !== phienBanDangSua && !coXungDot && (
+          <p className="error" role="status">
+            {tr(
+              "Công việc vừa được người khác cập nhật. Bản sửa của bạn vẫn được giữ; hãy kiểm tra xung đột khi lưu.",
+              "Someone updated this task. Your draft is preserved; check for conflicts when saving.",
+            )}
+          </p>
+        )}
+        <label>
+          {tr("Chuyển sang cột", "Move to column")}
+          <select
+            value={task.column_id}
+            disabled={dangXuLy || coThayDoiChuaLuu}
+            onChange={async (event) => {
+              const column_id = Number(event.target.value);
+              datDangXuLy(true);
+              datLoiHienThi("");
+              try {
+                await api.post(`/tasks/${task.id}/move`, {
+                  column_id,
+                  position: 0,
+                  version: phienBanDangSua,
+                });
+                await onChanged();
+              } catch (loi) {
+                datCoXungDot(loi instanceof ApiError && loi.status === 409);
+                datLoiHienThi((loi as Error).message);
+              } finally {
+                datDangXuLy(false);
+              }
+            }}
+          >
+            {columns.map((column) => (
+              <option key={column.id} value={column.id}>
+                {enumLabel(column.name, language)}
+              </option>
+            ))}
+          </select>
+        </label>
+        {coThayDoiChuaLuu && (
+          <p className="muted">
+            {tr(
+              "Lưu bản sửa trước khi chuyển cột.",
+              "Save your edits before moving the task.",
+            )}
+          </p>
+        )}
+        {coXungDot && (
+          <button
+            type="button"
+            className="button subtle"
+            onClick={async () => {
+              await onChanged();
+              datCoThayDoiChuaLuu(false);
+              datCoXungDot(false);
+              datLoiHienThi("");
+            }}
+          >
+            {tr("Bỏ bản sửa và tải dữ liệu mới", "Discard draft and reload")}
+          </button>
+        )}
+        <form
+          onSubmit={luuCongViec}
+          onChange={() => {
+            datCoThayDoiChuaLuu(true);
+            datDaLuu(false);
+          }}
+        >
+          <fieldset disabled={dangXuLy}>
+            <label>
+              {tr("Tiêu đề", "Title")}
+              <input
+                required
+                maxLength={240}
+                value={tenCongViec}
+                onChange={(suKien) => datTenCongViec(suKien.target.value)}
+              />
+            </label>
+            <label>
+              {tr("Mô tả", "Description")}
+              <textarea
+                rows={4}
+                value={moTa}
+                onChange={(suKien) => datMoTa(suKien.target.value)}
+              />
+            </label>
+            <div className="field-grid">
+              <label>
+                {tr("Ưu tiên", "Priority")}
+                <select
+                  value={uuTien}
+                  onChange={(suKien) => datUuTien(suKien.target.value)}
+                >
+                  {["LOW", "MEDIUM", "HIGH", "URGENT"].map((congViec) => (
+                    <option key={congViec} value={congViec}>
+                      {enumLabel(congViec, language)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                {tr("Người thực hiện", "Assignee")}
+                <select
+                  aria-label={tr("Người thực hiện", "Assignee")}
+                  value={nguoiNhan}
+                  onChange={(suKien) =>
+                    datNguoiNhan(Number(suKien.target.value))
+                  }
+                >
+                  <option value={0}>{tr("Chưa giao", "Unassigned")}</option>
+                  {members.map((thanhVien) => (
+                    <option key={thanhVien.user_id} value={thanhVien.user_id}>
+                      {thanhVien.name} (@{thanhVien.username})
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                {tr("Ước lượng (giờ)", "Estimate (hours)")}
+                <input
+                  type="number"
+                  min="0"
+                  max="99999"
+                  step="0.01"
+                  value={gioDuKien}
+                  onChange={(suKien) =>
+                    datGioDuKien(Number(suKien.target.value))
+                  }
+                />
+              </label>
+              <label>
+                {tr("Thực tế (giờ)", "Actual (hours)")}
+                <input
+                  type="number"
+                  min="0"
+                  max="99999"
+                  step="0.01"
+                  value={gioThucTe}
+                  onChange={(suKien) =>
+                    datGioThucTe(Number(suKien.target.value))
+                  }
+                />
+              </label>
+              <label>
+                {tr("Hạn hoàn thành", "Due date")}
+                <input
+                  type="date"
+                  value={hanHoanThanh}
+                  onChange={(suKien) => datHanHoanThanh(suKien.target.value)}
+                />
+              </label>
+            </div>
+            <div className="drawer-actions">
+              <button
+                type="submit"
+                className="button primary"
+                disabled={dangXuLy}
+              >
+                {tr("Lưu thay đổi", "Save changes")}
+              </button>
+              <button
+                className="button danger"
+                type="button"
+                onClick={xoaCongViec}
+                disabled={dangXuLy}
+              >
+                {tr("Xóa", "Delete")}
+              </button>
+            </div>
+          </fieldset>
         </form>
         <section className="drawer-section">
           <h3>{tr("Kỹ năng cần thiết", "Required skills")}</h3>
           <p>
-            {requiredSkills.length
-              ? requiredSkills.join(" · ")
+            {kyNangCanCo.length
+              ? kyNangCanCo.join(" · ")
               : tr("Chưa có kỹ năng được ghi nhận.", "No skills recorded yet.")}
           </p>
         </section>
         <section className="drawer-section">
           <h3>
             {tr("Công việc con", "Subtasks")}{" "}
-            <span className="count">[{String(subtasks.length).padStart(2, "0")}]</span>
+            <span className="count">{danhSachViecCon.length}</span>
           </h3>
-          {subtasks.map((s) => (
-            <label className="subtask-row" key={s.id}>
+          {danhSachViecCon.map((viecCon) => (
+            <div className="subtask-row" key={viecCon.id}>
               <input
                 type="checkbox"
-                checked={s.done}
-                onChange={() => toggleSub(s)}
+                checked={viecCon.done}
+                disabled={dangXuLy || viecConDangSua !== null}
+                aria-label={`${tr("Hoàn thành việc con", "Complete subtask")} ${viecCon.title}`}
+                onChange={() => doiTrangThaiViecCon(viecCon)}
               />
-              <span className={s.done ? "strike" : ""}>{s.title}</span>
-              <small>{s.estimated_hours}h</small>
-            </label>
+              <span className={viecCon.done ? "strike" : ""}>
+                {viecCon.title}
+              </span>
+              <small>
+                {viecCon.estimated_hours}h ·{" "}
+                {members.find((nguoi) => nguoi.user_id === viecCon.assignee_id)
+                  ?.name || tr("Theo task cha", "Inherited assignee")}
+              </small>
+              <button
+                type="button"
+                className="button subtle"
+                disabled={dangXuLy || viecConDangSua !== null}
+                onClick={() => datViecConDangSua({ ...viecCon })}
+              >
+                {tr("Sửa", "Edit")}
+              </button>
+              <button
+                type="button"
+                className="button subtle"
+                disabled={dangXuLy || viecConDangSua !== null}
+                onClick={() => xoaViecCon(viecCon)}
+              >
+                {tr("Xóa", "Delete")}
+              </button>
+            </div>
           ))}
-          <form className="inline-form" onSubmit={addSub}>
+          {viecConDangSua && (
+            <form
+              onSubmit={luuViecCon}
+              className="panel"
+              aria-label={tr("Sửa việc con", "Edit subtask")}
+            >
+              <label>
+                {tr("Tên việc con", "Subtask title")}
+                <input
+                  required
+                  maxLength={240}
+                  value={viecConDangSua.title}
+                  onChange={(suKien) =>
+                    datViecConDangSua({
+                      ...viecConDangSua,
+                      title: suKien.target.value,
+                    })
+                  }
+                />
+              </label>
+              <label>
+                {tr("Mô tả việc con", "Subtask description")}
+                <textarea
+                  value={viecConDangSua.description}
+                  onChange={(suKien) =>
+                    datViecConDangSua({
+                      ...viecConDangSua,
+                      description: suKien.target.value,
+                    })
+                  }
+                />
+              </label>
+              <label>
+                {tr("Người nhận việc con", "Subtask assignee")}
+                <select
+                  value={viecConDangSua.assignee_id || 0}
+                  onChange={(suKien) =>
+                    datViecConDangSua({
+                      ...viecConDangSua,
+                      assignee_id: Number(suKien.target.value) || null,
+                    })
+                  }
+                >
+                  <option value={0}>
+                    {tr("Theo task cha", "Inherited assignee")}
+                  </option>
+                  {members.map((nguoi) => (
+                    <option key={nguoi.user_id} value={nguoi.user_id}>
+                      {nguoi.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                {tr("Giờ dự kiến việc con", "Subtask estimate")}
+                <input
+                  required
+                  type="number"
+                  min="0"
+                  max="99999"
+                  step="0.01"
+                  value={viecConDangSua.estimated_hours}
+                  onChange={(suKien) =>
+                    datViecConDangSua({
+                      ...viecConDangSua,
+                      estimated_hours: Number(suKien.target.value),
+                    })
+                  }
+                />
+              </label>
+              <label>
+                {tr("Giờ thực tế việc con", "Subtask actual hours")}
+                <input
+                  required
+                  type="number"
+                  min="0"
+                  max="99999"
+                  step="0.01"
+                  value={viecConDangSua.actual_hours}
+                  onChange={(suKien) =>
+                    datViecConDangSua({
+                      ...viecConDangSua,
+                      actual_hours: Number(suKien.target.value),
+                    })
+                  }
+                />
+              </label>
+              <label>
+                {tr("Hạn việc con", "Subtask due date")}
+                <input
+                  type="date"
+                  value={viecConDangSua.due_date || ""}
+                  onChange={(suKien) =>
+                    datViecConDangSua({
+                      ...viecConDangSua,
+                      due_date: suKien.target.value || null,
+                    })
+                  }
+                />
+              </label>
+              <button
+                type="submit"
+                className="button primary"
+                disabled={dangXuLy}
+              >
+                {tr("Lưu việc con", "Save subtask")}
+              </button>
+              <button
+                type="button"
+                className="button subtle"
+                disabled={dangXuLy}
+                onClick={() => datViecConDangSua(null)}
+              >
+                {tr("Hủy", "Cancel")}
+              </button>
+              <button
+                type="button"
+                className="button subtle"
+                disabled={dangXuLy}
+                onClick={() => {
+                  const banMoi = danhSachViecCon.find(
+                    (viec) => viec.id === viecConDangSua.id,
+                  );
+                  if (
+                    banMoi &&
+                    confirm(
+                      tr(
+                        "Bỏ bản sửa việc con và lấy dữ liệu mới?",
+                        "Discard subtask edits and load current data?",
+                      ),
+                    )
+                  )
+                    datViecConDangSua({ ...banMoi });
+                }}
+              >
+                {tr("Lấy bản việc con mới", "Reload subtask")}
+              </button>
+            </form>
+          )}
+          <form className="inline-form" onSubmit={themViecCon}>
             <input
               required
-              value={newSub}
-              onChange={(e) => setNewSub(e.target.value)}
+              value={tenViecConMoi}
+              onChange={(suKien) => datTenViecConMoi(suKien.target.value)}
               placeholder={tr("Tên việc con mới...", "New subtask title...")}
             />
-            <button className="button subtle">+ {tr("Thêm", "Add")}</button>
+            <button type="submit" className="button subtle" disabled={dangXuLy}>
+              + {tr("Thêm", "Add")}
+            </button>
           </form>
         </section>
         <section className="drawer-section">
           <h3>{tr("Bình luận", "Comments")}</h3>
-          {comments.map((c) => (
-            <div className="comment" key={c.id}>
+          {danhSachBinhLuan.map((binhLuan) => (
+            <div className="comment" key={binhLuan.id}>
               <span className="avatar small">
-                {members.find((m) => m.user_id === c.author_id)?.name[0] || "U"}
+                {members.find(
+                  (thanhVien) => thanhVien.user_id === binhLuan.author_id,
+                )?.name[0] || "U"}
               </span>
               <div>
                 <small>
-                  {members.find((m) => m.user_id === c.author_id)?.name ||
-                    `User #${c.author_id}`}{" "}
-                  ·{" "}
-                  {new Date(c.created_at).toLocaleString(
-                    language === "vi" ? "vi-VN" : "en-US",
-                  )}
+                  {members.find(
+                    (thanhVien) => thanhVien.user_id === binhLuan.author_id,
+                  )?.name || `User #${binhLuan.author_id}`}{" "}
+                  · {formatTimestamp(binhLuan.created_at, language)}
                 </small>
-                <p>{c.content}</p>
+                <p>{binhLuan.content}</p>
               </div>
             </div>
           ))}
-          <form onSubmit={comment}>
+          <form onSubmit={guiBinhLuan}>
             <textarea
               required
               rows={2}
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
+              value={noiDungBinhLuan}
+              onChange={(suKien) => datNoiDungBinhLuan(suKien.target.value)}
               placeholder={tr(
                 "Viết bình luận. Mention bằng @username...",
                 "Write a comment. Mention with @username...",
               )}
             />
-            <button className="button primary">
+            <button
+              type="submit"
+              className="button primary"
+              disabled={dangXuLy}
+            >
               {tr("Gửi bình luận", "Post comment")}
             </button>
           </form>
@@ -802,18 +1427,16 @@ function TaskPanel({
         <section className="drawer-section">
           <h3>{tr("Nhật ký hoạt động", "Activity log")}</h3>
           <div className="activity-list">
-            {activities.map((a) => (
-              <div key={a.id}>
+            {nhatKy.map((hoatDong) => (
+              <div key={hoatDong.id}>
                 <span className="activity-dot" />
                 <span>
-                  <strong>{a.action}</strong>
+                  <strong>{enumLabel(hoatDong.action, language)}</strong>
                   <small>
-                    {members.find((m) => m.user_id === a.actor_id)?.name ||
-                      `User #${a.actor_id}`}{" "}
-                    ·{" "}
-                    {new Date(a.created_at).toLocaleString(
-                      language === "vi" ? "vi-VN" : "en-US",
-                    )}
+                    {members.find(
+                      (thanhVien) => thanhVien.user_id === hoatDong.actor_id,
+                    )?.name || `User #${hoatDong.actor_id}`}{" "}
+                    · {formatTimestamp(hoatDong.created_at, language)}
                   </small>
                 </span>
               </div>
@@ -821,6 +1444,6 @@ function TaskPanel({
           </div>
         </section>
       </div>
-    </div>
+    </dialog>
   );
 }

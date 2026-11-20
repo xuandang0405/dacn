@@ -147,16 +147,16 @@ def test_project_websocket_receives_real_event(client):
     token = owner["Authorization"][7:]
     with client.websocket_connect(f"/api/v1/ws/projects/{project['id']}", headers={"Origin": "http://localhost:3000"}) as socket:
         socket.send_text(token)
-        assert socket.receive_json()["event"] == "connected"
+        assert business_message(socket)["event"] == "connected"
         response = client.post(f"/api/v1/projects/{project['id']}/tasks", json={"title": "Live task"}, headers=owner)
         assert response.status_code == 201
-        event = socket.receive_json()
+        event = business_message(socket)
         assert event["event"] == "task.created"
         assert event["entity_id"] == response.json()["id"]
     with client.websocket_connect(f"/api/v1/ws/projects/{project['id']}", headers={"Origin": "http://localhost:3000"}) as socket:
         socket.send_text(outsider["Authorization"][7:])
         with pytest.raises(WebSocketDisconnect):
-            socket.receive_json()
+            business_message(socket)
 
 def test_gemini_rejects_invalid_json(monkeypatch):
     import httpx
@@ -196,7 +196,7 @@ def test_confirmed_ai_skills_survive_task_reload(client, monkeypatch):
     plan = AIPlan.model_validate({"summary": "Plan", "tasks": [{"title": "Build API", "description": "Implement endpoints", "estimated_hours": 4, "priority": "HIGH", "required_skills": ["FastAPI", "MySQL", "FastAPI"], "subtasks": []}]})
     document = client.post(f"/api/v1/ai/projects/{project['id']}/documents", files={"file": ("brief.txt", b"Build a secure API", "text/plain")}, headers=owner)
     assert document.status_code == 201
-    async def fake_decompose(story, project_name, documents, language):
+    async def fake_decompose(story, project_name, documents, language, **kwargs):
         assert documents[0].filename == "brief.txt"
         assert language == "vi"
         return plan
@@ -217,18 +217,19 @@ def test_mention_notification_websocket(client):
     token = member["Authorization"][7:]
     with client.websocket_connect("/api/v1/ws/notifications", headers={"Origin": "http://localhost:3000"}) as socket:
         socket.send_text(token)
-        assert socket.receive_json()["event"] == "connected"
+        assert business_message(socket)["event"] == "connected"
         response = client.post(f"/api/v1/workspaces/{ws['id']}/members", json={"email":"member4@example.com"}, headers=owner)
         assert response.status_code == 201
-        assert socket.receive_json()["payload"]["kind"] == "invitation"
+        assert business_message(socket)["payload"]["kind"] == "invitation"
         pending = client.get("/api/v1/invitations", headers=member).json()[0]
         assert client.post("/api/v1/invitations/respond", json={"token": pending["token"], "accept": True}, headers=member).status_code == 200
         project = client.post(f"/api/v1/workspaces/{ws['id']}/projects", json={"name": "Mentions board"}, headers=owner).json()
         assert client.post(f"/api/v1/projects/{project['id']}/members/{response.json()['user_id']}", headers=owner).status_code == 201
+        assert business_message(socket)["payload"]["kind"] == "project_access_changed"
         task = client.post(f"/api/v1/projects/{project['id']}/tasks", json={"title": "Review"}, headers=owner).json()
         mention = client.post(f"/api/v1/tasks/{task['id']}/comments", json={"content": "Review with @member4"}, headers=owner)
         assert mention.status_code == 201
-        assert socket.receive_json()["payload"]["kind"] == "mention"
+        assert business_message(socket)["payload"]["kind"] == "mention"
         notifications = client.get("/api/v1/notifications", headers=member).json()
         assert any(n["kind"] == "mention" and n["entity_id"] == task["id"] for n in notifications)
 
@@ -247,7 +248,7 @@ def test_project_documents_gate_access_and_query(client, monkeypatch):
     uploaded = client.post(f"{url}/documents", files={"file": ("brief.txt", b"Scope: build reports", "text/plain")}, headers=owner)
     assert uploaded.status_code == 201
     assert client.get(f"{url}/documents", headers=owner).json()[0]["filename"] == "brief.txt"
-    async def fake_answer(name, documents, mode, question, language):
+    async def fake_answer(name, documents, mode, question, language, **kwargs):
         assert name == "Specs" and documents[0].extracted_text == "Scope: build reports"
         assert mode == "ask" and question == "What is in scope?" and language == "en"
         return "Reports (brief.txt)."
@@ -270,3 +271,11 @@ def test_gemini_model_404_is_actionable(monkeypatch):
     with pytest.raises(HTTPException) as exc:
         asyncio.run(gemini.generate([{"text": "hi"}]))
     assert exc.value.status_code == 503 and "GEMINI_MODEL" in exc.value.detail
+
+
+def business_message(socket):
+    """Consumers may receive a workspace refresh before a business event."""
+    message = socket.receive_json()
+    while message.get("event") == "workspace.changed":
+        message = socket.receive_json()
+    return message

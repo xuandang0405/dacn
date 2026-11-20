@@ -1,8 +1,16 @@
 from datetime import date, datetime
 from typing import Annotated, Literal
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 PositiveId = Annotated[int, Field(strict=True, ge=1)]
+
 
 def patch_schema(schema):
     for name in ("title", "description", "priority", "estimated_hours", "actual_hours"):
@@ -12,10 +20,14 @@ def patch_schema(schema):
             prop.update(options[0])
         prop.pop("default", None)
 
+
 class InputModel(BaseModel):
+    # Quy tắc chung cho dữ liệu nhận từ frontend: không nhận trường lạ/NaN.
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
-    @field_validator("name", "title", "content", "story", check_fields=False, mode="before")
+    @field_validator(
+        "name", "title", "content", "story", check_fields=False, mode="before"
+    )
     @classmethod
     def trim_text(cls, value):
         return value.strip() if isinstance(value, str) else value
@@ -28,8 +40,11 @@ class InputModel(BaseModel):
             raise ValueError("End date must not precede start date")
         return self
 
+
 class ORM(BaseModel):
+    # Đọc các thuộc tính ORM để tạo JSON trả về cho frontend.
     model_config = ConfigDict(from_attributes=True)
+
 
 class UserOut(ORM):
     id: int
@@ -38,34 +53,44 @@ class UserOut(ORM):
     name: str
     active: bool
 
+
 class RegisterIn(InputModel):
     email: EmailStr
-    username: str = Field(min_length=3, max_length=40, pattern=r"^[a-zA-Z][a-zA-Z0-9_]*$")
+    username: str = Field(
+        min_length=3, max_length=40, pattern=r"^[a-zA-Z][a-zA-Z0-9_]*$"
+    )
     name: str = Field(min_length=1, max_length=120)
     password: str = Field(min_length=10, max_length=128)
+
 
 class LoginIn(InputModel):
     email: EmailStr
     password: str
 
+
 class TokenOut(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
 
 class PasswordChange(InputModel):
     old_password: str
     new_password: str = Field(min_length=10, max_length=128)
 
+
 class ForgotIn(InputModel):
     email: EmailStr
+
 
 class ResetIn(InputModel):
     token: str
     new_password: str = Field(min_length=10, max_length=128)
 
+
 class WorkspaceIn(InputModel):
     name: str = Field(min_length=1, max_length=160)
     description: str = ""
+
 
 class WorkspaceOut(ORM):
     id: int
@@ -73,6 +98,7 @@ class WorkspaceOut(ORM):
     description: str
     owner_id: int
     created_at: datetime
+
 
 class MemberOut(BaseModel):
     user_id: int
@@ -82,19 +108,29 @@ class MemberOut(BaseModel):
     role: str
     capacity_hours: int
 
+
 class InviteIn(InputModel):
     email: EmailStr
     role: Literal["ADMIN", "MEMBER"] = "MEMBER"
 
+
 class RoleIn(InputModel):
     role: Literal["ADMIN", "MEMBER"]
+
+
+class CapacityIn(InputModel):
+    capacity_hours: int = Field(strict=True, ge=0, le=168)
+
 
 class ProjectIn(InputModel):
     name: str = Field(min_length=1, max_length=160)
     description: str = ""
-    status: Literal["PLANNING", "ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"] = "PLANNING"
+    status: Literal["PLANNING", "ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"] = (
+        "PLANNING"
+    )
     start_date: date | None = None
     end_date: date | None = None
+
 
 class ProjectOut(ORM):
     id: int
@@ -106,6 +142,7 @@ class ProjectOut(ORM):
     end_date: date | None
     created_at: datetime
 
+
 class ColumnOut(ORM):
     id: int
     project_id: int
@@ -113,9 +150,11 @@ class ColumnOut(ORM):
     position: int
     is_done: bool
 
+
 class ColumnIn(InputModel):
     name: str = Field(min_length=1, max_length=80)
     is_done: bool = False
+
 
 class TaskIn(InputModel):
     model_config = ConfigDict(extra="forbid")
@@ -129,6 +168,7 @@ class TaskIn(InputModel):
     due_date: date | None = None
     column_id: PositiveId | None = None
 
+
 class TaskPatch(InputModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra=patch_schema)
     title: str | None = Field(default=None, min_length=1, max_length=240)
@@ -141,12 +181,22 @@ class TaskPatch(InputModel):
     due_date: date | None = None
     version: PositiveId
 
-    @field_validator("title", "description", "priority", "estimated_hours", "actual_hours", mode="before")
+    @field_validator(
+        "title",
+        "description",
+        "priority",
+        "estimated_hours",
+        "actual_hours",
+        mode="before",
+    )
     @classmethod
     def reject_explicit_null(cls, value):
         if value is None:
-            raise ValueError("This field cannot be null; omit it to keep the current value")
+            raise ValueError(
+                "This field cannot be null; omit it to keep the current value"
+            )
         return value
+
 
 class TaskOut(ORM):
     id: int
@@ -167,10 +217,12 @@ class TaskOut(ORM):
     created_at: datetime
     updated_at: datetime
 
+
 class TaskMove(InputModel):
     column_id: PositiveId
     position: int = Field(strict=True, ge=0)
     version: PositiveId
+
 
 class SubtaskIn(InputModel):
     title: str = Field(min_length=1, max_length=240)
@@ -181,19 +233,29 @@ class SubtaskIn(InputModel):
     actual_hours: float = Field(default=0, ge=0, le=99999)
     due_date: date | None = None
 
+
+class SubtaskUpdate(SubtaskIn):
+    version: PositiveId
+
+
 class SubtaskOut(SubtaskIn, ORM):
     id: int
     task_id: int
+    version: int
+
 
 class SkillIn(InputModel):
     name: str = Field(min_length=1, max_length=100)
 
+
 class SkillLevelIn(InputModel):
     user_id: PositiveId
-    level: int = Field(strict=True, ge=1, le=5)
+    level: int = Field(strict=True, ge=0, le=5)
+
 
 class CommentIn(InputModel):
     content: str = Field(min_length=1, max_length=5000)
+
 
 class CommentOut(ORM):
     id: int
@@ -202,10 +264,12 @@ class CommentOut(ORM):
     content: str
     created_at: datetime
 
+
 class AISubtask(InputModel):
     title: str = Field(min_length=1, max_length=240)
     description: str = ""
     estimated_hours: float = Field(ge=0, le=1000)
+
 
 class AITask(InputModel):
     title: str = Field(min_length=1, max_length=240)
@@ -214,6 +278,8 @@ class AITask(InputModel):
     priority: Literal["LOW", "MEDIUM", "HIGH", "URGENT"]
     required_skills: list[str] = Field(max_length=12)
     subtasks: list[AISubtask] = Field(max_length=15)
+    assignee_id: PositiveId | None = None
+    assignment_reason: str = Field(default="", max_length=600)
 
     @field_validator("required_skills")
     @classmethod
@@ -223,22 +289,35 @@ class AITask(InputModel):
             raise ValueError("Skill name is too long")
         return cleaned
 
+
 class AIPlan(InputModel):
     summary: str
     tasks: list[AITask] = Field(min_length=1, max_length=20)
 
+
 class AIStory(InputModel):
     project_id: PositiveId
-    story: str = Field(min_length=10, max_length=4000)
+    story: str = Field(default="", max_length=4000)
     language: Literal["vi", "en"] = "vi"
+    context_id: PositiveId | None = None
+
+    @model_validator(mode="after")
+    def require_scope(self):
+        if not self.context_id and len(self.story.strip()) < 10:
+            raise ValueError("Enter at least 10 characters or select an AI answer")
+        return self
+
 
 class AIConfirm(InputModel):
     plan: AIPlan
+
 
 class AIProjectQuery(InputModel):
     mode: Literal["analyze", "ask"]
     question: str = Field(default="", max_length=2000)
     language: Literal["vi", "en"] = "vi"
+    context_id: PositiveId | None = None
+
 
 class ProjectDocumentOut(ORM):
     id: int

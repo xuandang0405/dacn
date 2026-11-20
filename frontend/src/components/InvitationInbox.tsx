@@ -1,37 +1,80 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/language";
 
-type Invitation = { id: number; workspace: string; role: string; token: string };
+type Invitation = {
+  id: number;
+  workspace: string;
+  role: string;
+  token: string;
+};
 
-export default function InvitationInbox({ onAccepted, refreshKey }: { onAccepted: () => void; refreshKey: number }) {
-  const { t } = useLanguage();
-  const [rows, setRows] = useState<Invitation[]>([]);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState<number | null>(null);
-  async function load() {
-    try { setRows(await api.get<Invitation[]>("/invitations")); }
-    catch (e) { setError((e as Error).message); }
-  }
-  useEffect(() => { load(); }, [refreshKey]);
-  async function respond(row: Invitation, accept: boolean) {
-    setBusy(row.id); setError("");
+export default function InvitationInbox({
+  onAccepted,
+  refreshKey,
+}: {
+  onAccepted: () => void;
+  refreshKey: number;
+}) {
+  const { t, message: messageText } = useLanguage();
+  const [danhSachLoiMoi, datDanhSachLoiMoi] = useState<Invitation[]>([]);
+  const [loi, datLoi] = useState("");
+  const [dangXuLy, datDangXuLy] = useState<number | null>(null);
+  const taiLoiMoi = useCallback(async () => {
+    try {
+      datDanhSachLoiMoi(await api.get<Invitation[]>("/invitations"));
+    } catch (loi) {
+      datLoi((loi as Error).message);
+    }
+  }, []);
+  useEffect(() => {
+    taiLoiMoi();
+  }, [refreshKey, taiLoiMoi]);
+  async function traLoiMoi(row: Invitation, accept: boolean) {
+    datDangXuLy(row.id);
+    datLoi("");
     try {
       await api.post("/invitations/respond", { token: row.token, accept });
-      await load();
+      await taiLoiMoi();
       if (accept) onAccepted();
-    } catch (e) { setError((e as Error).message); }
-    finally { setBusy(null); }
+    } catch (loi) {
+      datLoi((loi as Error).message);
+    } finally {
+      datDangXuLy(null);
+    }
   }
-  if (!rows.length && !error) return null;
-  return <section className="panel" aria-label={t("Lời mời tham gia", "Workspace invitations")}>
-    <h2>{t("Lời mời tham gia", "Workspace invitations")}</h2>
-    {error && <p className="error">{error}</p>}
-    {rows.map(row => <div className="inline-form" key={row.id}>
-      <span><strong>{row.workspace}</strong> · {row.role}</span>
-      <button className="button" disabled={busy !== null} onClick={() => respond(row, true)}>{t("Chấp nhận", "Accept")}</button>
-      <button className="button subtle" disabled={busy !== null} onClick={() => respond(row, false)}>{t("Từ chối", "Decline")}</button>
-    </div>)}
-  </section>;
+  if (!danhSachLoiMoi.length && !loi) return null;
+  return (
+    <section
+      className="panel"
+      aria-label={t("Lời mời tham gia", "Workspace invitations")}
+    >
+      <h2>{t("Lời mời tham gia", "Workspace invitations")}</h2>
+      {loi && <p className="error">{messageText(loi)}</p>}
+      {danhSachLoiMoi.map((row) => (
+        <div className="inline-form" key={row.id}>
+          <span>
+            <strong>{row.workspace}</strong> · {row.role}
+          </span>
+          <button
+            type="button"
+            className="button"
+            disabled={dangXuLy !== null}
+            onClick={() => traLoiMoi(row, true)}
+          >
+            {t("Chấp nhận", "Accept")}
+          </button>
+          <button
+            type="button"
+            className="button subtle"
+            disabled={dangXuLy !== null}
+            onClick={() => traLoiMoi(row, false)}
+          >
+            {t("Từ chối", "Decline")}
+          </button>
+        </div>
+      ))}
+    </section>
+  );
 }

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { ListTodo } from "lucide-react";
 import { api } from "@/lib/api";
 import { enumLabel, useLanguage } from "@/lib/language";
 import type { Paged, Project, Task } from "@/lib/types";
@@ -9,40 +10,47 @@ type AssignedTask = { task: Task; project: Project };
 export default function MyTasks({
   projects,
   userId,
+  refreshKey,
   onOpenProject,
 }: {
   projects: Project[];
   userId: number;
-  onOpenProject: (project: Project) => void;
+  refreshKey: number;
+  onOpenProject: (project: Project, taskId: number) => void;
 }) {
-  const { language, t } = useLanguage();
-  const [rows, setRows] = useState<AssignedTask[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { language, t, message: messageText } = useLanguage();
+  const [danhSachViec, datDanhSachViec] = useState<AssignedTask[]>([]);
+  const [dangTai, datDangTai] = useState(true);
+  const [loi, datLoi] = useState("");
 
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
+    let daHuy = false;
+    datDangTai(true);
+    datDanhSachViec([]);
+    datLoi("");
     Promise.all(
       projects.map(async (project) => {
-        const tasks: AssignedTask[] = [];
-        let page = 1;
-        let total = 0;
+        const viecTrongDuAn: AssignedTask[] = [];
+        let trang = 1;
+        let tongSoViec = 0;
         do {
-          const result = await api.get<Paged<Task>>(
-            `/projects/${project.id}/tasks?assignee_id=${userId}&size=100&page=${page}`,
+          const ketQua = await api.get<Paged<Task>>(
+            `/projects/${project.id}/tasks?assignee_id=${userId}&include_subtasks=true&size=100&page=${trang}`,
           );
-          tasks.push(...result.items.map((task) => ({ task, project })));
-          total = result.total;
-          page++;
-        } while (tasks.length < total);
-        return tasks;
+          viecTrongDuAn.push(
+            ...ketQua.items.map((task) => ({ task, project })),
+          );
+          tongSoViec = ketQua.total;
+          trang++;
+          if (ketQua.items.length === 0) break;
+        } while (viecTrongDuAn.length < tongSoViec);
+        return viecTrongDuAn;
       }),
     )
-      .then((groups) => {
-        if (!cancelled) {
-          setRows(
-            groups
+      .then((viecTheoDuAn) => {
+        if (!daHuy) {
+          datDanhSachViec(
+            viecTheoDuAn
               .flat()
               .sort((a, b) =>
                 (a.task.due_date || "9999-12-31").localeCompare(
@@ -50,25 +58,25 @@ export default function MyTasks({
                 ),
               ),
           );
-          setError("");
+          datLoi("");
         }
       })
-      .catch((cause) => {
-        if (!cancelled) setError((cause as Error).message);
+      .catch((loi) => {
+        if (!daHuy) datLoi((loi as Error).message);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!daHuy) datDangTai(false);
       });
     return () => {
-      cancelled = true;
+      daHuy = true;
     };
-  }, [projects, userId]);
+  }, [projects, userId, refreshKey]);
 
   return (
     <div className="panel">
       <div className="panel-header">
         <div>
-          <h2>{t("CÔNG VIỆC CỦA TÔI", "MY TASKS")}</h2>
+          <h2>{t("Công việc được giao", "Assigned tasks")}</h2>
           <p className="muted">
             {t(
               "Danh sách công việc được phân công trong workspace.",
@@ -77,40 +85,56 @@ export default function MyTasks({
           </p>
         </div>
       </div>
-      {loading && (
+      {dangTai && (
         <div className="muted" style={{ padding: "16px 0" }}>
           {t("Đang tải công việc…", "Loading tasks…")}
         </div>
       )}
-      {error && <div className="error">{error}</div>}
-      {!loading && !error && rows.length === 0 && (
+      {loi && <div className="error">{messageText(loi)}</div>}
+      {!dangTai && !loi && danhSachViec.length === 0 && (
         <p className="muted" style={{ padding: "28px 0", textAlign: "center" }}>
-          {t("Chưa có công việc nào được phân công.", "No tasks assigned to you yet.")}
+          {t(
+            "Chưa có công việc nào được phân công.",
+            "No tasks assigned to you yet.",
+          )}
         </p>
       )}
       <div className="project-list">
-        {rows.map(({ task, project }) => (
-          <button
-            className="project-row"
-            key={task.id}
-            onClick={() => onOpenProject(project)}
-          >
-            <span className="project-symbol">№</span>
-            <span>
-              <strong>
-                № TSK-{task.id} · {task.title}
-              </strong>
-              <small>
-                {project.name} · {t("Hạn", "Due")}{" "}
-                {task.due_date || t("chưa đặt", "not set")} · EST {task.estimated_hours}h
-              </small>
-            </span>
-            <span className={`priority ${task.priority.toLowerCase()}`}>
-              {enumLabel(task.priority, language)}
-            </span>
-            <span>→</span>
-          </button>
-        ))}
+        {!dangTai &&
+          !loi &&
+          danhSachViec.map(({ task, project }) => (
+            <button
+              type="button"
+              className="project-row"
+              key={task.id}
+              onClick={() => onOpenProject(project, task.id)}
+            >
+              <span className="project-symbol">
+                <ListTodo size={16} />
+              </span>
+              <span>
+                <strong>{task.title}</strong>
+                <small>
+                  {project.name} ·{" "}
+                  {task.assignee_id !== userId && (
+                    <>
+                      {t(
+                        "Bạn được giao việc con",
+                        "You have an assigned subtask",
+                      )}{" "}
+                      ·{" "}
+                    </>
+                  )}
+                  {t("Hạn", "Due")} {task.due_date || t("chưa đặt", "not set")}{" "}
+                  · {t("Ước lượng", "Estimate")} {task.estimated_hours}h
+                </small>
+              </span>
+              <span className={`priority ${task.priority.toLowerCase()}`}>
+                {enumLabel(task.priority, language)}
+              </span>
+              <span>→</span>
+            </button>
+          ))}
       </div>
     </div>
   );
