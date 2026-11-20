@@ -18,11 +18,31 @@ class InvitationResponse(InputModel):
 
 @router.get("", summary="My pending workspace invitations")
 def inbox(user: User = Depends(current_user), db: Session = Depends(get_db)):
-    rows = db.execute(select(WorkspaceInvitation, Workspace.name).join(Workspace).where(WorkspaceInvitation.user_id == user.id, WorkspaceInvitation.status == "PENDING", WorkspaceInvitation.expires_at > utcnow())).all()
-    return [{"id": row.id, "workspace": name, "role": row.role, "expires_at": row.expires_at,
-        "token": invitation_token(row)} for row, name in rows]
+    danh_sach_loi_moi = db.execute(
+        select(WorkspaceInvitation, Workspace.name)
+        .join(Workspace)
+        .where(
+            WorkspaceInvitation.user_id == user.id,
+            WorkspaceInvitation.status == "PENDING",
+            WorkspaceInvitation.expires_at > utcnow(),
+        )
+    ).all()
+    return [
+        {
+            "id": loi_moi.id,
+            "workspace": ten_nhom,
+            "role": loi_moi.role,
+            "expires_at": loi_moi.expires_at,
+            "token": invitation_token(loi_moi),
+        }
+        for loi_moi, ten_nhom in danh_sach_loi_moi
+    ]
 
 
 @router.post("/respond", summary="Accept or decline a workspace invitation")
-def answer(data: InvitationResponse, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def answer(
+    data: InvitationResponse,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+):
     return respond(db, user, data.token, data.accept)

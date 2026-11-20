@@ -83,3 +83,65 @@ test('AI draft keys stay stable after edits and are excluded from confirmation p
   assert.equal(edited.tasks[0].subtasks[0].localId, childKey);
   assert.equal(JSON.stringify(toPlan(edited)).includes('localId'), false);
 });
+
+test('AI assignees survive review and can be changed or cleared before confirmation', () => {
+  const { toDraft, toPlan } = loadSource('../src/lib/ai-draft.ts');
+  const plan = { summary: 'Assigned plan', tasks: [{ title: 'API', description: 'Build API', estimated_hours: 4, priority: 'HIGH', required_skills: ['Python'], assignee_id: 12, assignment_reason: 'Skill match', subtasks: [] }] };
+  const draft = toDraft(plan);
+  assert.equal(toPlan(draft).tasks[0].assignee_id, 12);
+  draft.tasks[0].assignee_id = 34;
+  draft.tasks[0].assignment_reason = '';
+  assert.equal(toPlan(draft).tasks[0].assignee_id, 34);
+  draft.tasks[0].assignee_id = null;
+  assert.equal(toPlan(draft).tasks[0].assignee_id, null);
+  assert.equal(JSON.stringify(toPlan(draft)).includes('localId'), false);
+});
+
+test('task retry keeps its key after lost response, and a deliberate new task gets a new key', async () => {
+  const api = client();
+  const keys = [];
+  global.fetch = async (url, init) => {
+    keys.push(init.headers.get('Idempotency-Key'));
+    if (keys.length === 1) throw new TypeError('Response lost after commit');
+    return response(201, { id: 42 });
+  };
+  const body = { title: 'Task' };
+  await assert.rejects(api.createTask(201, body, 7));
+  assert.equal((await api.createTask(201, body, 7)).id, 42);
+  assert.ok(keys[0]);
+  assert.equal(keys[0], keys[1]);
+  await api.createTask(201, body, 7);
+  assert.notEqual(keys[2], keys[1]);
+});
+
+test('two clicks while task creation is pending share one request', async () => {
+  const api = client();
+  let calls = 0;
+  let finish;
+  global.fetch = async () => {
+    calls++;
+    await new Promise(resolve => { finish = resolve; });
+    return response(201, { id: 43 });
+  };
+  const first = api.createTask(202, { title: 'Task' }, 7);
+  const second = api.createTask(202, { title: 'Task' }, 7);
+  assert.equal(first, second);
+  assert.equal(calls, 1);
+  finish();
+  assert.deepEqual(await first, await second);
+});
+
+test('refresh retry preserves the task creation key', async () => {
+  const api = client();
+  api.setToken('expired');
+  const keys = [];
+  global.fetch = async (url, init) => {
+    if (url.endsWith('/auth/refresh')) return response(200, { access_token: 'fresh' });
+    keys.push(init.headers.get('Idempotency-Key'));
+    return init.headers.get('Authorization') === 'Bearer fresh'
+      ? response(201, { id: 44 }) : response(401, { detail: 'Expired' });
+  };
+  assert.equal((await api.createTask(203, { title: 'Task' }, 7)).id, 44);
+  assert.equal(keys.length, 2);
+  assert.equal(keys[0], keys[1]);
+});

@@ -194,7 +194,7 @@ test("real owner/member workflows, documents, realtime, session recovery and mob
       });
       await ownerDrawer
         .getByRole("combobox", { name: "Người thực hiện", exact: true })
-        .selectOption({ label: "Acceptance Member" });
+        .selectOption({ label: `Acceptance Member (@${memberUsername})` });
       await ownerDrawer
         .getByLabel("Ước lượng (giờ)", { exact: true })
         .fill("4");
@@ -348,7 +348,7 @@ test("real owner/member workflows, documents, realtime, session recovery and mob
     });
 
     await test.step("Upload real PDF DOCX and text documents; AI requires project context", async () => {
-      await nav(owner, "AI Assistant");
+      await nav(owner, "Trợ lý AI");
       await expect(
         owner.getByRole("button", { name: "Hỏi Gemini", exact: true }),
       ).toBeDisabled();

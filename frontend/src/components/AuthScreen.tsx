@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import logoImg from "@/img/logo.png";
+import Brand, { BrandSlogan } from "./Brand";
 import { api, setToken } from "@/lib/api";
 import { LanguageSwitch, useLanguage } from "@/lib/language";
 
@@ -20,12 +19,12 @@ export default function AuthScreen({
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [dangXuLy, datDangXuLy] = useState(false);
+  const [loi, datLoi] = useState("");
   const [success, setSuccess] = useState("");
-  function switchMode(next: typeof mode) {
+  function doiBieuMau(next: typeof mode) {
     setMode(next);
-    setError("");
+    datLoi("");
     setSuccess("");
     setPassword("");
   }
@@ -33,12 +32,12 @@ export default function AuthScreen({
     if (new URLSearchParams(window.location.search).has("reset"))
       setMode("reset");
   }, []);
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (busy) return;
-    setError("");
+  async function guiBieuMau(suKien: React.FormEvent) {
+    suKien.preventDefault();
+    if (dangXuLy) return;
+    datLoi("");
     setSuccess("");
-    setBusy(true);
+    datDangXuLy(true);
     try {
       if (mode === "register")
         await api.post("/auth/register", { email, username, name, password });
@@ -67,14 +66,14 @@ export default function AuthScreen({
       });
       setToken(token.access_token);
       onLogin();
-    } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
+    } catch (loi) {
+      datLoi(
+        loi instanceof Error
+          ? loi.message
           : t("Không thể đăng nhập", "Unable to log in"),
       );
     } finally {
-      setBusy(false);
+      datDangXuLy(false);
     }
   }
   return (
@@ -83,21 +82,12 @@ export default function AuthScreen({
         <LanguageSwitch />
       </div>
       <div className="auth-visual">
-        <div className="brand-mark">
-          <Image
-            src={logoImg}
-            alt="STM"
-            width={48}
-            height={48}
-            style={{ filter: "brightness(0) invert(1)" }}
-          />
+        <div className="auth-brand">
+          <Brand />
         </div>
         <div>
-          <p className="eyebrow">DIGITAL MANUSCRIPT & WORKSHOP LEDGER</p>
           <h1>
-            {t("Làm việc rõ ràng.", "Work with clarity.")}
-            <br />
-            {t("Tiến độ trong tầm tay.", "Keep progress in sight.")}
+            <BrandSlogan />
           </h1>
           <p>
             {t(
@@ -107,13 +97,15 @@ export default function AuthScreen({
           </p>
         </div>
         <div className="auth-visual-footer">
-          {"PROJECTS // PEOPLE // CAPACITY // PROGRESS"}
+          {t("Dự án · Thành viên · Tiến độ", "Projects · People · Progress")}
         </div>
       </div>
-      <form className="auth-card" onSubmit={submit}>
+      <form className="auth-card" onSubmit={guiBieuMau}>
         <div className="auth-card-top">
-          <Image src={logoImg} alt="STM" width={26} height={26} />
-          <span>Smart Task Manager</span>
+          <Brand variant="wordmark" />
+          <p className="brand-tagline">
+            <BrandSlogan />
+          </p>
         </div>
         <h2>
           {mode === "register"
@@ -153,7 +145,7 @@ export default function AuthScreen({
                 required
                 maxLength={120}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(suKien) => setName(suKien.target.value)}
                 placeholder={t("Nguyễn Văn A", "Alex Smith")}
               />
             </label>
@@ -165,7 +157,7 @@ export default function AuthScreen({
                 maxLength={40}
                 pattern="[A-Za-z][A-Za-z0-9_]*"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(suKien) => setUsername(suKien.target.value)}
                 placeholder="nguyenvana"
               />
             </label>
@@ -178,7 +170,7 @@ export default function AuthScreen({
               required
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(suKien) => setEmail(suKien.target.value)}
               placeholder="you@company.com"
             />
           </label>
@@ -194,19 +186,23 @@ export default function AuthScreen({
               }
               maxLength={mode === "login" ? undefined : 128}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(suKien) => setPassword(suKien.target.value)}
               placeholder="••••••••••"
             />
           </label>
         )}
-        {error && <div className="error">{messageText(error)}</div>}
+        {loi && <div className="error">{messageText(loi)}</div>}
         {(success || notice) && (
           <div className="success" role="status">
             {messageText(success || notice)}
           </div>
         )}
-        <button type="submit" className="button primary full" disabled={busy}>
-          {busy
+        <button
+          type="submit"
+          className="button primary full"
+          disabled={dangXuLy}
+        >
+          {dangXuLy
             ? t("Đang xử lý…", "Working…")
             : mode === "register"
               ? t("Tạo tài khoản", "Create account")
@@ -221,15 +217,15 @@ export default function AuthScreen({
             <>
               <button
                 type="button"
-                disabled={busy}
-                onClick={() => switchMode("register")}
+                disabled={dangXuLy}
+                onClick={() => doiBieuMau("register")}
               >
                 {t("Tạo tài khoản", "Create account")}
               </button>
               <button
                 type="button"
-                disabled={busy}
-                onClick={() => switchMode("forgot")}
+                disabled={dangXuLy}
+                onClick={() => doiBieuMau("forgot")}
               >
                 {t("Quên mật khẩu?", "Forgot password?")}
               </button>
@@ -237,8 +233,8 @@ export default function AuthScreen({
           ) : (
             <button
               type="button"
-              disabled={busy}
-              onClick={() => switchMode("login")}
+              disabled={dangXuLy}
+              onClick={() => doiBieuMau("login")}
             >
               {t("Quay lại đăng nhập", "Back to login")}
             </button>

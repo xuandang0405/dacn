@@ -1,4 +1,10 @@
 const vietnamese: Record<string, string> = {
+  "Subtask changed; reload before saving":
+    "Việc con đã được thay đổi. Đã tải bản mới, vui lòng kiểm tra lại.",
+  "Idempotency key was used with different task data":
+    "Mã yêu cầu đã dùng cho nội dung khác. Hãy kiểm tra lại công việc trước khi gửi.",
+  "Task creation is still in progress; retry with the same key":
+    "Công việc đang được tạo. Vui lòng thử lại cùng yêu cầu sau ít giây.",
   "Workspace saved.": "Đã lưu workspace.",
   "Invitation sent. Waiting for acceptance.":
     "Đã gửi lời mời. Người nhận cần chấp nhận trước khi trở thành thành viên.",
@@ -112,6 +118,16 @@ const vietnamese: Record<string, string> = {
   "Gemini returned an invalid plan; please retry":
     "Gemini trả kế hoạch không hợp lệ. Hãy thử lại.",
   "AI request not found": "Không tìm thấy yêu cầu AI.",
+  "AI context not found":
+    "Không tìm thấy cuộc trao đổi AI của bạn trong dự án này.",
+  "Project documents changed; analyze them again":
+    "Tài liệu dự án đã thay đổi. Hãy phân tích lại trước khi lập hoặc xác nhận kế hoạch.",
+  "Generate a task plan before confirming":
+    "Hãy lập kế hoạch công việc trước khi xác nhận.",
+  "Enter at least 10 characters or select an AI answer":
+    "Hãy nhập yêu cầu ít nhất 10 ký tự hoặc chọn dùng câu trả lời AI.",
+  "AI output limit reached; request a smaller scope":
+    "Kế hoạch quá dài. Hãy giới hạn phạm vi rồi thử lại.",
   "Plan already confirmed": "Kế hoạch này đã được xác nhận.",
   "Project has no Kanban column": "Dự án chưa có cột Kanban để tạo công việc.",
   "Question is required": "Vui lòng nhập câu hỏi.",

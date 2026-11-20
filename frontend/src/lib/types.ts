@@ -98,6 +98,8 @@ export type AIPlan = {
     estimated_hours: number;
     priority: string;
     required_skills: string[];
+    assignee_id?: number | null;
+    assignment_reason?: string;
     subtasks: { title: string; description: string; estimated_hours: number }[];
   }[];
 };

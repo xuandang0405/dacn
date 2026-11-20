@@ -39,7 +39,7 @@ def test_subtask_mutations_emit_committed_realtime_events(client):
         assert created.status_code == 201
         child = created.json()
         assert socket.receive_json()["event"] == "subtask.created"
-        assert client.put(f"/api/v1/subtasks/{child['id']}", headers=owner, json={"title": "Child", "done": True}).status_code == 200
+        assert client.put(f"/api/v1/subtasks/{child['id']}", headers=owner, json={"title": "Child", "done": True, "version": child["version"]}).status_code == 200
         assert socket.receive_json()["event"] == "subtask.updated"
         assert client.delete(f"/api/v1/subtasks/{child['id']}", headers=owner).status_code == 204
         assert socket.receive_json()["event"] == "subtask.deleted"

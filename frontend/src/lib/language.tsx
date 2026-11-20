@@ -48,7 +48,10 @@ const labels: Record<string, [string, string]> = {
   deadline_soon: ["Sắp đến hạn", "Upcoming deadline"],
 };
 export function enumLabel(value: string, language: Language) {
-  return labels[value]?.[language === "vi" ? 0 : 1] || value;
+  const banDich = labels[value];
+  if (!banDich) return value;
+  const viTriNgonNgu = language === "vi" ? 0 : 1;
+  return banDich[viTriNgonNgu] || value;
 }
 type LanguageContextValue = {
   language: Language;

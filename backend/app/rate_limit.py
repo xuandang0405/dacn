@@ -6,25 +6,47 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 HITS = defaultdict(deque)
 
+
 class SensitiveRateLimit(BaseHTTPMiddleware):
     """Single-process IP throttle; use a shared store when running multiple replicas."""
+
     def __init__(self, app):
         super().__init__(app)
         self.hits = HITS
-        self.limits = {"/api/v1/auth/login": 10, "/api/v1/auth/register": 5, "/api/v1/auth/forgot-password": 5, "/api/v1/ai/decompose-task": 10}
+        self.limits = {
+            "/api/v1/auth/login": 10,
+            "/api/v1/auth/register": 5,
+            "/api/v1/auth/forgot-password": 5,
+            "/api/v1/ai/decompose-task": 10,
+        }
 
     async def dispatch(self, request: Request, call_next):
-        path = request.url.path
-        key_path = "/api/v1/ai/projects/query" if path.startswith("/api/v1/ai/projects/") and path.endswith("/query") else path
-        limit = 10 if key_path == "/api/v1/ai/projects/query" else self.limits.get(path)
-        if request.method != "POST" or limit is None:
+        duong_dan = request.url.path
+        nhom_yeu_cau = duong_dan
+        la_cau_hoi_ai = duong_dan.startswith(
+            "/api/v1/ai/projects/"
+        ) and duong_dan.endswith("/query")
+        if la_cau_hoi_ai:
+            nhom_yeu_cau = "/api/v1/ai/projects/query"
+
+        gioi_han = self.limits.get(duong_dan)
+        if nhom_yeu_cau == "/api/v1/ai/projects/query":
+            gioi_han = 10
+        if request.method != "POST" or gioi_han is None:
             return await call_next(request)
-        key = (request.client.host if request.client else "unknown", key_path)
-        now = time.monotonic()
-        bucket = self.hits[key]
-        while bucket and bucket[0] < now - 60:
-            bucket.popleft()
-        if len(bucket) >= limit:
-            return JSONResponse({"detail": "Too many requests; retry in one minute"}, status_code=429)
-        bucket.append(now)
+
+        dia_chi_ip = "unknown"
+        if request.client:
+            dia_chi_ip = request.client.host
+        khoa = (dia_chi_ip, nhom_yeu_cau)
+        hien_tai = time.monotonic()
+        cac_lan_goi = self.hits[khoa]
+        # Chỉ tính các lượt gọi trong 60 giây gần nhất của IP này.
+        while cac_lan_goi and cac_lan_goi[0] < hien_tai - 60:
+            cac_lan_goi.popleft()
+        if len(cac_lan_goi) >= gioi_han:
+            return JSONResponse(
+                {"detail": "Too many requests; retry in one minute"}, status_code=429
+            )
+        cac_lan_goi.append(hien_tai)
         return await call_next(request)

@@ -1,0 +1,119 @@
+name: ${COMPOSE_PROJECT_NAME:-smart-task-manager-server}
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
+x-app-environment: &app-environment
+  DATABASE_URL: mysql+pymysql://${MYSQL_USER:-smart_task}:${MYSQL_PASSWORD:?Run server setup}@mysql:3306/${MYSQL_DATABASE:-smart_task_manager}?charset=utf8mb4
+  JWT_SECRET: ${JWT_SECRET:?Run server setup}
+  FRONTEND_ORIGIN: ${PUBLIC_URL:?Set the public server URL}
+  DOCUMENT_STORAGE_DIR: /data/project_documents
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Run server setup}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-smart_task_manager}
+      MYSQL_USER: ${MYSQL_USER:-smart_task}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Run server setup}
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --log-bin-trust-function-creators=1
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: [CMD-SHELL, 'MYSQL_PWD="$$MYSQL_PASSWORD" mysql --protocol=TCP -h 127.0.0.1 -u "$$MYSQL_USER" "$$MYSQL_DATABASE" -Nse "SELECT 1"']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    logging: *logging
+
+  initialize:
+    build: ../backend
+    environment:
+      <<: *app-environment
+      SEED_DEMO: ${SEED_DEMO:-false}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-}
+    command: sh -c 'alembic upgrade head && if [ "$${SEED_DEMO}" = "true" ]; then python seed.py; fi'
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: "no"
+    logging: *logging
+
+  backend:
+    build: ../backend
+    restart: unless-stopped
+    environment:
+      <<: *app-environment
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.1-flash-lite}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-true}
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1 --proxy-headers --forwarded-allow-ips=*
+    volumes:
+      - project_documents:/data/project_documents
+    depends_on:
+      initialize:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    logging: *logging
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        NEXT_PUBLIC_API_URL: /
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    logging: *logging
+
+  scheduler:
+    build: ../backend
+    restart: unless-stopped
+    environment: *app-environment
+    command: python -m app.jobs.deadlines
+    depends_on:
+      backend:
+        condition: service_healthy
+    logging: *logging
+
+  gateway:
+    build: .
+    restart: unless-stopped
+    environment:
+      PUBLIC_SCHEME: ${PUBLIC_SCHEME:-http}
+      NGINX_ENVSUBST_FILTER: ^PUBLIC_SCHEME$
+    ports:
+      - "${HTTP_BIND:-0.0.0.0}:${HTTP_PORT:-8080}:80"
+    depends_on:
+      frontend:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, "wget -q -O /dev/null http://127.0.0.1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    logging: *logging
+
+volumes:
+  mysql_data:
+  project_documents:

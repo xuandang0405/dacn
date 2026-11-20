@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [main, develop, "integration/mvp"]
   push:
-    branches: [develop, "integration/mvp"]
+    branches: [develop, "integration/mvp", "integration/final-20261118"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -67,6 +67,11 @@ jobs:
   browser:
     name: Website and Docker workflows
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        suite: [website, assignment, ai-review-ui, stability]
     env:
       E2E_OUTPUT_DIR: ${{ github.workspace }}/test-results/browser
     steps:
@@ -91,11 +96,11 @@ jobs:
         run: npm ci && npx playwright install --with-deps chromium
       - name: Test owner and member UI workflows
         working-directory: frontend
-        run: npm run test:e2e
+        run: npm run test:e2e -- tests/e2e/${{ matrix.suite }}.spec.ts
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
-          name: website-test-results
+          name: website-test-results-${{ matrix.suite }}
           path: test-results/
       - name: Diagnose container startup failures
         if: failure()

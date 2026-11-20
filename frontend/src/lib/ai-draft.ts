@@ -31,6 +31,12 @@ export function toPlan(draft: DraftPlan): AIPlan {
       estimated_hours: task.estimated_hours,
       priority: task.priority,
       required_skills: task.required_skills,
+      ...(task.assignee_id !== undefined
+        ? { assignee_id: task.assignee_id }
+        : {}),
+      ...(task.assignment_reason !== undefined
+        ? { assignment_reason: task.assignment_reason }
+        : {}),
       subtasks: task.subtasks.map((child) => ({
         title: child.title,
         description: child.description,

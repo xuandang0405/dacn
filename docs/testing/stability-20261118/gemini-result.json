@@ -1,0 +1,30 @@
+{
+  "environment": "isolated local MySQL deployment check",
+  "public_cloud": false,
+  "query_status": 200,
+  "usage": {
+    "model": "gemini-3.1-flash-lite",
+    "input_tokens": 189,
+    "total_tokens": 419,
+    "output_tokens": 112,
+    "provider_calls": 1,
+    "thinking_tokens": 118
+  },
+  "cached": false,
+  "has_answer": true,
+  "repeat_status": 200,
+  "repeat_cached": true,
+  "plan_status": 200,
+  "plan_task_count": 4,
+  "plan_usage": {
+    "model": "gemini-3.1-flash-lite",
+    "input_tokens": 421,
+    "total_tokens": 1317,
+    "output_tokens": 773,
+    "provider_calls": 1,
+    "thinking_tokens": 123
+  },
+  "confirm_status": 201,
+  "saved_task_count": 4,
+  "confirm_repeat_status": 409
+}

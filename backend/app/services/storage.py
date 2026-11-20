@@ -1,4 +1,5 @@
 """Private local document store. Keys are generated, never taken from filenames."""
+
 import hashlib
 import logging
 import re
@@ -45,4 +46,6 @@ def remove_deleted_documents(keys: list[str]):
         try:
             remove(key)
         except OSError:
-            logging.getLogger(__name__).warning("Document cleanup needs retry after scope deletion")
+            logging.getLogger(__name__).warning(
+                "Document cleanup needs retry after scope deletion"
+            )

@@ -19,7 +19,7 @@ def test_ai_releases_db_while_waiting_and_rechecks_revoked_session(client, monke
         finally:
             dependency.close()
     client.app.dependency_overrides[get_db] = tracked_db
-    async def answer(*args):
+    async def answer(*args, **kwargs):
         db = captured["db"]
         assert not db.in_transaction(), "A provider wait must not hold a database connection"
         with Session(db.get_bind()) as other:

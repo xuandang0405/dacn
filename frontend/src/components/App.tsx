@@ -26,8 +26,7 @@ import {
 } from "@/lib/api";
 import type { Member, Project, User, Workspace } from "@/lib/types";
 import InvitationInbox from "./InvitationInbox";
-import Image from "next/image";
-import logoImg from "@/img/logo.png";
+import Brand, { BrandSlogan } from "./Brand";
 import AuthScreen from "./AuthScreen";
 import Overview from "./Overview";
 import Board from "./Board";
@@ -60,106 +59,117 @@ export default function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [project, setProject] = useState<Project | null>(null);
   const [section, setSection] = useState<Section>("dashboard");
-  const [error, setError] = useState("");
+  const [loi, datLoi] = useState("");
   const [authNotice, setAuthNotice] = useState("");
   const [mobile, setMobile] = useState(false);
   const [newWorkspace, setNewWorkspace] = useState("");
   const [newProject, setNewProject] = useState("");
   const [unread, setUnread] = useState(0);
-  const [online, setOnline] = useState(false);
-  const [notificationEvent, setNotificationEvent] = useState(0);
-  const [workspaceRole, setWorkspaceRole] = useState("");
+  const [coKetNoi, datKetNoi] = useState(false);
+  const [lanDoiThongBao, datLanDoiThongBao] = useState(0);
+  const [lanDoiCongViec, datLanDoiCongViec] = useState(0);
+  const [taskToOpen, setTaskToOpen] = useState<number | null>(null);
+  const [vaiTroTrongNhom, datVaiTroTrongNhom] = useState("");
   const [creatingWorkspace, setCreatingWorkspace] = useState(false);
   const [creatingProject, setCreatingProject] = useState(false);
   const [workspaceFormOpen, setWorkspaceFormOpen] = useState(false);
   const canManageWorkspace =
-    workspaceRole === "OWNER" || workspaceRole === "ADMIN";
+    vaiTroTrongNhom === "OWNER" || vaiTroTrongNhom === "ADMIN";
+  useEffect(() => {
+    if (!mobile) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobile(false);
+    };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [mobile]);
   useEffect(() => {
     const end = (event: Event) => {
       const reason = (event as CustomEvent<string>).detail;
-      setAuthNotice(
-        reason === "logout"
-          ? ""
-          : reason === "password_changed"
-            ? "Password changed. Please log in."
-            : "Your session has ended. Please sign in again.",
-      );
+      let thongBao = "Your session has ended. Please sign in again.";
+      if (reason === "logout") thongBao = "";
+      if (reason === "password_changed")
+        thongBao = "Password changed. Please log in.";
+      setAuthNotice(thongBao);
       setUser(null);
       setWorkspace(null);
-      setWorkspaceRole("");
+      datVaiTroTrongNhom("");
       setWorkspaces([]);
       setProjects([]);
       setProject(null);
       setUnread(0);
-      setError("");
+      datLoi("");
       setSection("dashboard");
     };
     window.addEventListener(SESSION_EVENT, end);
     return () => window.removeEventListener(SESSION_EVENT, end);
   }, []);
-  const load = useCallback(async () => {
-    const version = getSessionVersion();
+  const taiThongTinTaiKhoan = useCallback(async () => {
+    // Không khôi phục thông tin cũ nếu người dùng đã đăng xuất khi đang tải.
+    const phienLucBatDau = getSessionVersion();
     try {
       const [me, ws] = await Promise.all([
         api.get<User>("/auth/me"),
         api.get<Workspace[]>("/workspaces"),
       ]);
-      if (version !== getSessionVersion()) return;
+      if (phienLucBatDau !== getSessionVersion()) return;
       setUser(me);
       setAuthNotice("");
       setWorkspaces(ws);
-      const saved = Number(localStorage.getItem("workspace_id"));
-      setWorkspace(ws.find((w) => w.id === saved) || ws[0] || null);
+      const nhomDaChon = Number(localStorage.getItem("workspace_id"));
+      setWorkspace(ws.find((w) => w.id === nhomDaChon) || ws[0] || null);
     } catch {
-      if (version === getSessionVersion()) setUser(null);
+      if (phienLucBatDau === getSessionVersion()) setUser(null);
     }
   }, []);
   useEffect(() => {
     refresh()
-      .then((ok) => (ok ? load() : setUser(null)))
+      .then((daLamMoi) => {
+        if (daLamMoi) return taiThongTinTaiKhoan();
+        setUser(null);
+      })
       .finally(() => setBoot(false));
-  }, [load]);
+  }, [taiThongTinTaiKhoan]);
   useEffect(() => {
-    let active = true;
+    let conHieuLuc = true;
     if (!workspace) {
       setProjects([]);
       setProject(null);
-      setWorkspaceRole("");
+      datVaiTroTrongNhom("");
       return;
     }
     localStorage.setItem("workspace_id", String(workspace.id));
-    setWorkspaceRole("");
     Promise.all([
       api.get<Project[]>(`/workspaces/${workspace.id}/projects`),
       api.get<Member[]>(`/workspaces/${workspace.id}/members`),
     ])
       .then(([rows, members]) => {
-        if (!active) return;
-        setWorkspaceRole(
+        if (!conHieuLuc) return;
+        datVaiTroTrongNhom(
           members.find((m) => m.user_id === user?.id)?.role || "",
         );
-        setError("");
+        datLoi("");
         setProjects(rows);
         setProject(
           (old) => rows.find((p) => p.id === old?.id) || rows[0] || null,
         );
       })
       .catch((e) => {
-        if (active) setError(e.message);
+        if (conHieuLuc) datLoi(e.message);
       });
     return () => {
-      active = false;
+      conHieuLuc = false;
     };
-  }, [workspace, online, user?.id]);
+  }, [workspace, coKetNoi, user?.id]);
   useEffect(() => {
     if (!user) return;
-    const checkHealth = () =>
+    const kiemTraKetNoi = () =>
       fetch(`${base}/health`, { cache: "no-store" })
-        .then((r) => setOnline(r.ok))
-        .catch(() => setOnline(false));
-    checkHealth();
-    const healthTimer = setInterval(checkHealth, 30000);
-    return () => clearInterval(healthTimer);
+        .then((r) => datKetNoi(r.ok))
+        .catch(() => datKetNoi(false));
+    kiemTraKetNoi();
+    const lichKiemTraKetNoi = setInterval(kiemTraKetNoi, 30000);
+    return () => clearInterval(lichKiemTraKetNoi);
   }, [user]);
   useEffect(() => {
     if (!user) return;
@@ -168,55 +178,64 @@ export default function App() {
         .get<{ count: number }>("/notifications/unread-count")
         .then((data) => {
           setUnread(data.count);
-          setNotificationEvent((value) => value + 1);
+          datLanDoiThongBao((value) => value + 1);
+          datLanDoiCongViec((value) => value + 1);
         })
         .catch(() => {});
     update();
-    const timer = setInterval(update, 30000);
-    return () => clearInterval(timer);
+    const lichCapNhat = setInterval(update, 30000);
+    return () => clearInterval(lichCapNhat);
   }, [user]);
   useEffect(() => {
     if (!user) return;
-    let socket: WebSocket | undefined;
-    let closed = false;
-    const connect = () => {
-      const token = getToken();
-      if (!token || closed) return;
-      socket = new WebSocket(
+    let ketNoi: WebSocket | undefined;
+    let daDong = false;
+    const ketNoiThongBao = () => {
+      const maTruyCap = getToken();
+      if (!maTruyCap || daDong) return;
+      ketNoi = new WebSocket(
         `${base.replace(/^http/, "ws")}/api/v1/ws/notifications`,
       );
-      socket.onopen = () => socket?.send(token);
-      socket.onmessage = (e) => {
-        const message = JSON.parse(e.data);
-        if (message.event === "notification.created") {
+      ketNoi.onopen = () => ketNoi?.send(maTruyCap);
+      ketNoi.onmessage = (e) => {
+        const thongBao = JSON.parse(e.data);
+        if (
+          thongBao.event === "task.changed" ||
+          thongBao.event === "connected" ||
+          (thongBao.event === "workspace.changed" &&
+            thongBao.payload?.workspace_id === workspace?.id)
+        ) {
+          datLanDoiCongViec((value) => value + 1);
+        }
+        if (thongBao.event === "notification.created") {
           if (
-            message.payload?.kind === "role_changed" ||
-            message.payload?.kind === "membership_removed" ||
-            message.payload?.kind === "project_access_changed"
+            thongBao.payload?.kind === "role_changed" ||
+            thongBao.payload?.kind === "membership_removed" ||
+            thongBao.payload?.kind === "project_access_changed"
           )
-            load();
-          setNotificationEvent((n) => n + 1);
+            taiThongTinTaiKhoan();
+          datLanDoiThongBao((n) => n + 1);
           api
             .get<{ count: number }>("/notifications/unread-count")
             .then((data) => setUnread(data.count))
             .catch(() => {});
         }
       };
-      socket.onclose = () => {
-        if (!closed) setTimeout(connect, 2500);
+      ketNoi.onclose = () => {
+        if (!daDong) setTimeout(ketNoiThongBao, 2500);
       };
     };
-    connect();
+    ketNoiThongBao();
     return () => {
-      closed = true;
-      socket?.close();
+      daDong = true;
+      ketNoi?.close();
     };
-  }, [user, load]);
-  async function createWorkspace(e: React.FormEvent) {
+  }, [user, taiThongTinTaiKhoan, workspace?.id]);
+  async function taoNhom(e: React.FormEvent) {
     e.preventDefault();
     if (creatingWorkspace) return;
     setCreatingWorkspace(true);
-    setError("");
+    datLoi("");
     try {
       const ws = await api.post<Workspace>("/workspaces", {
         name: newWorkspace,
@@ -228,16 +247,16 @@ export default function App() {
       setWorkspaceFormOpen(false);
       setSection("dashboard");
     } catch (e) {
-      setError((e as Error).message);
+      datLoi((e as Error).message);
     } finally {
       setCreatingWorkspace(false);
     }
   }
-  async function createProject(e: React.FormEvent) {
+  async function taoDuAn(e: React.FormEvent) {
     e.preventDefault();
     if (!workspace || !canManageWorkspace || creatingProject) return;
     setCreatingProject(true);
-    setError("");
+    datLoi("");
     try {
       const p = await api.post<Project>(
         `/workspaces/${workspace.id}/projects`,
@@ -248,7 +267,7 @@ export default function App() {
       setNewProject("");
       setSection("board");
     } catch (e) {
-      setError((e as Error).message);
+      datLoi((e as Error).message);
     } finally {
       setCreatingProject(false);
     }
@@ -260,7 +279,8 @@ export default function App() {
         {t("Đang tải không gian làm việc…", "Loading workspace…")}
       </div>
     );
-  if (!user) return <AuthScreen onLogin={load} notice={authNotice} />;
+  if (!user)
+    return <AuthScreen onLogin={taiThongTinTaiKhoan} notice={authNotice} />;
   const nav: { id: Section; label: string; icon: React.ReactNode }[] = [
     {
       id: "dashboard",
@@ -270,10 +290,10 @@ export default function App() {
     { id: "projects", label: t("Dự án", "Projects"), icon: <FolderKanban /> },
     {
       id: "my_tasks",
-      label: t("Task của tôi", "My tasks"),
+      label: t("Công việc của tôi", "My tasks"),
       icon: <ListTodo />,
     },
-    { id: "board", label: "Kanban", icon: <Blocks /> },
+    { id: "board", label: t("Bảng công việc", "Task board"), icon: <Blocks /> },
     { id: "members", label: t("Thành viên", "Members"), icon: <Users /> },
     { id: "skills", label: t("Kỹ năng", "Skills"), icon: <CircleHelp /> },
     {
@@ -281,7 +301,7 @@ export default function App() {
       label: t("Khối lượng", "Workload"),
       icon: <ChartNoAxesCombined />,
     },
-    { id: "ai", label: "AI Assistant", icon: <Bot /> },
+    { id: "ai", label: t("Trợ lý AI", "AI Assistant"), icon: <Bot /> },
     {
       id: "analytics",
       label: t("Phân tích", "Analytics"),
@@ -293,17 +313,12 @@ export default function App() {
     <div className="app-shell">
       <aside className={`sidebar ${mobile ? "open" : ""}`}>
         <div className="sidebar-brand">
-          <Image
-            src={logoImg}
-            alt="STM"
-            width={34}
-            height={34}
-            className="logo-img"
-          />
-          <span>
-            Smart Task
-            <small>LEDGER · VOL. 01</small>
-          </span>
+          <div className="sidebar-brand-copy">
+            <Brand />
+            <p className="brand-tagline">
+              <BrandSlogan />
+            </p>
+          </div>
           <button
             type="button"
             className="icon-button mobile-only"
@@ -317,9 +332,15 @@ export default function App() {
           {t("KHÔNG GIAN LÀM VIỆC", "WORKSPACE")}
         </div>
         <select
+          aria-label={t("Không gian làm việc", "Workspace")}
           className="workspace-select"
           value={workspace?.id || ""}
           onChange={(e) => {
+            setProject(null);
+            setProjects([]);
+            datVaiTroTrongNhom("");
+            setTaskToOpen(null);
+            datLoi("");
             setWorkspace(
               workspaces.find((w) => w.id === Number(e.target.value)) || null,
             );
@@ -345,7 +366,7 @@ export default function App() {
               {t("Thêm workspace", "Add workspace")}
             </button>
             {workspaceFormOpen && (
-              <form className="new-workspace-form" onSubmit={createWorkspace}>
+              <form className="new-workspace-form" onSubmit={taoNhom}>
                 <input
                   required
                   maxLength={160}
@@ -371,6 +392,7 @@ export default function App() {
               key={n.id}
               className={section === n.id ? "active" : ""}
               onClick={() => {
+                setTaskToOpen(null);
                 setSection(n.id);
                 setMobile(false);
               }}
@@ -414,6 +436,14 @@ export default function App() {
           </button>
         </div>
       </aside>
+      {mobile && (
+        <button
+          type="button"
+          className="sidebar-backdrop"
+          aria-label={t("Đóng menu", "Close menu")}
+          onClick={() => setMobile(false)}
+        />
+      )}
       <div className="main-area">
         <header className="topbar">
           <button
@@ -426,7 +456,6 @@ export default function App() {
           </button>
           <div>
             <span className="breadcrumb">
-              {"WORKSPACE // "}
               {workspace?.name || t("Bắt đầu", "Get started")}
             </span>
             <h1>
@@ -441,9 +470,9 @@ export default function App() {
           </div>
           <div className="top-actions">
             <LanguageSwitch />
-            <span className={`status-pill ${online ? "" : "offline"}`}>
+            <span className={`status-pill ${coKetNoi ? "" : "offline"}`}>
               <span />{" "}
-              {online
+              {coKetNoi
                 ? t("Hệ thống trực tuyến", "System online")
                 : t("Mất kết nối API", "API offline")}
             </span>
@@ -451,6 +480,7 @@ export default function App() {
               type="button"
               className="icon-button"
               title={t("Thông báo", "Notifications")}
+              aria-label={t("Thông báo", "Notifications")}
               onClick={() => setSection("notifications")}
             >
               <Bell size={20} />
@@ -459,6 +489,7 @@ export default function App() {
             <button
               type="button"
               className="avatar"
+              aria-label={t("Hồ sơ", "Profile")}
               onClick={() => setSection("profile")}
             >
               {user.name[0]?.toUpperCase()}
@@ -468,21 +499,21 @@ export default function App() {
         <main className="content">
           <InvitationInbox
             onAccepted={() => {
-              load();
+              taiThongTinTaiKhoan();
             }}
-            refreshKey={notificationEvent}
+            refreshKey={lanDoiThongBao}
           />
-          {error && (
+          {loi && (
             <div className="error">
-              <button type="button" onClick={() => setError("")}>
+              <button type="button" onClick={() => datLoi("")}>
                 ×
               </button>
-              {messageText(error)}
+              {messageText(loi)}
             </div>
           )}
           {!workspace ? (
             <div className="empty-large">
-              <div className="empty-icon">✦</div>
+              <FolderKanban className="empty-icon" size={32} />
               <h2>
                 {t(
                   "Tạo không gian làm việc đầu tiên",
@@ -495,7 +526,7 @@ export default function App() {
                   "Invite your team and track your project.",
                 )}
               </p>
-              <form onSubmit={createWorkspace} className="inline-form">
+              <form onSubmit={taoNhom} className="inline-form">
                 <input
                   required
                   value={newWorkspace}
@@ -515,6 +546,8 @@ export default function App() {
             <>
               {section === "dashboard" && (
                 <Overview
+                  refreshKey={lanDoiCongViec}
+                  key={workspace.id}
                   workspace={workspace}
                   projects={projects}
                   onOpenProject={(p) => {
@@ -535,7 +568,7 @@ export default function App() {
                     </div>
                   </div>
                   {canManageWorkspace && (
-                    <form className="inline-form" onSubmit={createProject}>
+                    <form className="inline-form" onSubmit={taoDuAn}>
                       <input
                         required
                         value={newProject}
@@ -562,11 +595,11 @@ export default function App() {
                           setSection("board");
                         }}
                       >
-                        <span className="project-symbol">№</span>
+                        <span className="project-symbol">
+                          <FolderKanban size={16} />
+                        </span>
                         <span>
-                          <strong>
-                            № {String(p.id).padStart(2, "0")} · {p.name}
-                          </strong>
+                          <strong>{p.name}</strong>
                           <small>
                             {p.description ||
                               t(
@@ -586,9 +619,12 @@ export default function App() {
               )}
               {section === "my_tasks" && (
                 <MyTasks
+                  key={workspace.id}
                   projects={projects}
                   userId={user.id}
-                  onOpenProject={(p) => {
+                  refreshKey={lanDoiCongViec}
+                  onOpenProject={(p, taskId) => {
+                    setTaskToOpen(taskId);
                     setProject(p);
                     setSection("board");
                   }}
@@ -599,6 +635,12 @@ export default function App() {
                   <Board
                     key={project.id}
                     project={project}
+                    projects={projects}
+                    initialTaskId={taskToOpen}
+                    onSelectProject={(next) => {
+                      setTaskToOpen(null);
+                      setProject(next);
+                    }}
                     workspace={workspace}
                     actorId={user.id}
                     onProjectChange={(updated) => {
@@ -619,7 +661,7 @@ export default function App() {
                   <div className="empty-large">
                     <h2>{t("Chưa có dự án", "No projects yet")}</h2>
                     {canManageWorkspace ? (
-                      <form className="inline-form" onSubmit={createProject}>
+                      <form className="inline-form" onSubmit={taoDuAn}>
                         <input
                           required
                           value={newProject}
@@ -645,13 +687,24 @@ export default function App() {
                   </div>
                 ))}
               {section === "members" && (
-                <Skills workspace={workspace} actorId={user.id} membersOnly />
+                <Skills
+                  key={`${workspace.id}:${vaiTroTrongNhom}`}
+                  workspace={workspace}
+                  actorId={user.id}
+                  membersOnly
+                />
               )}
               {section === "skills" && (
-                <Skills workspace={workspace} actorId={user.id} />
+                <Skills
+                  key={`${workspace.id}:${vaiTroTrongNhom}`}
+                  workspace={workspace}
+                  actorId={user.id}
+                />
               )}
               {section === "workload" && (
                 <Overview
+                  refreshKey={lanDoiCongViec}
+                  key={workspace.id}
                   workspace={workspace}
                   projects={projects}
                   mode="workload"
@@ -671,6 +724,8 @@ export default function App() {
               )}
               {section === "analytics" && (
                 <Overview
+                  refreshKey={lanDoiCongViec}
+                  key={workspace.id}
                   workspace={workspace}
                   projects={projects}
                   mode="analytics"
@@ -683,12 +738,12 @@ export default function App() {
               {section === "notifications" && (
                 <Notifications
                   onUnreadChange={setUnread}
-                  refreshKey={notificationEvent}
+                  refreshKey={lanDoiThongBao}
                 />
               )}
               {section === "settings" && (
                 <SettingsPanel
-                  key={workspace.id}
+                  key={`${workspace.id}:${vaiTroTrongNhom}`}
                   workspace={workspace}
                   user={user}
                   onWorkspaceChange={(updated) => {
@@ -716,7 +771,7 @@ export default function App() {
                     {user.email}
                   </p>
                   <h3>{t("Tạo workspace khác", "Create another workspace")}</h3>
-                  <form className="inline-form" onSubmit={createWorkspace}>
+                  <form className="inline-form" onSubmit={taoNhom}>
                     <input
                       required
                       value={newWorkspace}

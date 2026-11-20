@@ -18,41 +18,41 @@ export default function InvitationInbox({
   refreshKey: number;
 }) {
   const { t, message: messageText } = useLanguage();
-  const [rows, setRows] = useState<Invitation[]>([]);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState<number | null>(null);
-  const load = useCallback(async () => {
+  const [danhSachLoiMoi, datDanhSachLoiMoi] = useState<Invitation[]>([]);
+  const [loi, datLoi] = useState("");
+  const [dangXuLy, datDangXuLy] = useState<number | null>(null);
+  const taiLoiMoi = useCallback(async () => {
     try {
-      setRows(await api.get<Invitation[]>("/invitations"));
-    } catch (e) {
-      setError((e as Error).message);
+      datDanhSachLoiMoi(await api.get<Invitation[]>("/invitations"));
+    } catch (loi) {
+      datLoi((loi as Error).message);
     }
   }, []);
   useEffect(() => {
-    load();
-  }, [refreshKey, load]);
-  async function respond(row: Invitation, accept: boolean) {
-    setBusy(row.id);
-    setError("");
+    taiLoiMoi();
+  }, [refreshKey, taiLoiMoi]);
+  async function traLoiMoi(row: Invitation, accept: boolean) {
+    datDangXuLy(row.id);
+    datLoi("");
     try {
       await api.post("/invitations/respond", { token: row.token, accept });
-      await load();
+      await taiLoiMoi();
       if (accept) onAccepted();
-    } catch (e) {
-      setError((e as Error).message);
+    } catch (loi) {
+      datLoi((loi as Error).message);
     } finally {
-      setBusy(null);
+      datDangXuLy(null);
     }
   }
-  if (!rows.length && !error) return null;
+  if (!danhSachLoiMoi.length && !loi) return null;
   return (
     <section
       className="panel"
       aria-label={t("Lời mời tham gia", "Workspace invitations")}
     >
       <h2>{t("Lời mời tham gia", "Workspace invitations")}</h2>
-      {error && <p className="error">{messageText(error)}</p>}
-      {rows.map((row) => (
+      {loi && <p className="error">{messageText(loi)}</p>}
+      {danhSachLoiMoi.map((row) => (
         <div className="inline-form" key={row.id}>
           <span>
             <strong>{row.workspace}</strong> · {row.role}
@@ -60,16 +60,16 @@ export default function InvitationInbox({
           <button
             type="button"
             className="button"
-            disabled={busy !== null}
-            onClick={() => respond(row, true)}
+            disabled={dangXuLy !== null}
+            onClick={() => traLoiMoi(row, true)}
           >
             {t("Chấp nhận", "Accept")}
           </button>
           <button
             type="button"
             className="button subtle"
-            disabled={busy !== null}
-            onClick={() => respond(row, false)}
+            disabled={dangXuLy !== null}
+            onClick={() => traLoiMoi(row, false)}
           >
             {t("Từ chối", "Decline")}
           </button>

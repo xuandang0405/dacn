@@ -28,23 +28,32 @@ def read_document(filename: str, content: bytes) -> tuple[str, str | None]:
             if reader.is_encrypted or not 1 <= len(reader.pages) <= 100:
                 raise ValueError("Unsupported PDF")
         except Exception as exc:
-            raise HTTPException(422, "PDF must be readable, unencrypted, and at most 100 pages") from exc
+            raise HTTPException(
+                422, "PDF must be readable, unencrypted, and at most 100 pages"
+            ) from exc
         return "application/pdf", None
 
     if extension == ".docx":
         try:
             with ZipFile(BytesIO(content)) as archive:
                 entries = archive.infolist()
-                if len(entries) > 500 or sum(item.file_size for item in entries) > 32 * 1024 * 1024:
+                if (
+                    len(entries) > 500
+                    or sum(item.file_size for item in entries) > 32 * 1024 * 1024
+                ):
                     raise ValueError("Archive too large")
             document = Document(BytesIO(content))
             lines = [paragraph.text for paragraph in document.paragraphs]
             for table in document.tables:
-                lines.extend(" | ".join(cell.text for cell in row.cells) for row in table.rows)
+                lines.extend(
+                    " | ".join(cell.text for cell in row.cells) for row in table.rows
+                )
             text = "\n".join(line.strip() for line in lines if line.strip())
         except Exception as exc:
             raise HTTPException(422, "Invalid or oversized DOCX file") from exc
-        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        media_type = (
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
     elif extension in {".txt", ".md"}:
         try:
             text = content.decode("utf-8-sig").strip()
