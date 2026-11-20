@@ -308,6 +308,8 @@ test("real owner/member workflows, documents, realtime, session recovery and mob
         .toBe(60);
       await first.getByRole("button", { name: "Đóng", exact: true }).click();
       await second.getByRole("button", { name: "Đóng", exact: true }).click();
+      await expect(first).toBeHidden();
+      await expect(second).toBeHidden();
       await expect(
         member
           .locator(".kanban-column")

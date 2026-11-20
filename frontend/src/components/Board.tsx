@@ -996,6 +996,7 @@ function TaskPanel({
           <button
             type="button"
             className="icon-button"
+            disabled={dangXuLy}
             onClick={dongChiTiet}
             aria-label={tr("Đóng", "Close")}
           >
