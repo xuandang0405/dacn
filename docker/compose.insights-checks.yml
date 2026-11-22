@@ -1,0 +1,14 @@
+services:
+  insights-checks:
+    build: ./backend
+    command: python /checks/smoke_insights.py
+    volumes:
+      - ./docker:/checks:ro
+    environment:
+      API_URL: http://backend:8000
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-STM-Demo-Only-2026!}
+      SOURCE_REVISION: ${SOURCE_REVISION:-working-tree}
+    depends_on:
+      backend:
+        condition: service_healthy

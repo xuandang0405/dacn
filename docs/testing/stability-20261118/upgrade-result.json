@@ -1,0 +1,6 @@
+{
+  "migration": "0005 -> 0006",
+  "existing_subtask_preserved": true,
+  "backfilled_version": 1,
+  "status": "passed"
+}

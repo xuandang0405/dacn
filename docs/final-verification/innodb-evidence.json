@@ -1,0 +1,148 @@
+{
+  "date": "2026-11-03",
+  "database_version": "8.4.11",
+  "engine": "InnoDB",
+  "isolation": "REPEATABLE READ",
+  "accounts": 100,
+  "concurrent_accounts": 100,
+  "api_workers": 1,
+  "live_gemini": false,
+  "checks": [
+    {
+      "name": "independent_task_lock",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "seconds": 0.03938092099997448
+      }
+    },
+    {
+      "name": "independent_column_lock",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "seconds": 0.0689943890001814
+      }
+    },
+    {
+      "name": "same_task_lost_update",
+      "passed": true,
+      "detail": {
+        "statuses": [
+          200,
+          409
+        ]
+      }
+    },
+    {
+      "name": "opposite_moves_bounded",
+      "passed": true,
+      "detail": {
+        "statuses": [
+          200,
+          409
+        ],
+        "seconds": [
+          0.026635801000338688,
+          0.027848069999890868
+        ]
+      }
+    },
+    {
+      "name": "kanban_contiguous_positions",
+      "passed": true,
+      "detail": {
+        "sizes": {
+          "371": 20,
+          "372": 19,
+          "373": 20,
+          "374": 21,
+          "375": 20
+        }
+      }
+    },
+    {
+      "name": "immutable_estimate_trigger",
+      "passed": true,
+      "detail": {
+        "update_rejected": true
+      }
+    },
+    {
+      "name": "two_websocket_clients_after_commit",
+      "passed": true,
+      "detail": {
+        "events": [
+          "task.created",
+          "task.created"
+        ]
+      }
+    },
+    {
+      "name": "load_list",
+      "passed": true,
+      "detail": {
+        "workload": "list",
+        "requests": 500,
+        "concurrent_accounts": 100,
+        "rounds": 5,
+        "p50_ms": 801.05,
+        "p95_ms": 1150.25,
+        "max_ms": 1300.05,
+        "http_errors": 0,
+        "wall_seconds_including_version_reads": 5.97
+      }
+    },
+    {
+      "name": "load_update",
+      "passed": true,
+      "detail": {
+        "workload": "update",
+        "requests": 500,
+        "concurrent_accounts": 100,
+        "rounds": 5,
+        "p50_ms": 1154.91,
+        "p95_ms": 1383.13,
+        "max_ms": 1416.33,
+        "http_errors": 0,
+        "wall_seconds_including_version_reads": 11.29
+      }
+    },
+    {
+      "name": "realtime_during_100_account_load",
+      "passed": true,
+      "detail": {
+        "clients": 2,
+        "updates_per_client": [
+          500,
+          500
+        ]
+      }
+    }
+  ],
+  "load_websocket_clients": 2,
+  "load": [
+    {
+      "workload": "list",
+      "requests": 500,
+      "concurrent_accounts": 100,
+      "rounds": 5,
+      "p50_ms": 801.05,
+      "p95_ms": 1150.25,
+      "max_ms": 1300.05,
+      "http_errors": 0,
+      "wall_seconds_including_version_reads": 5.97
+    },
+    {
+      "workload": "update",
+      "requests": 500,
+      "concurrent_accounts": 100,
+      "rounds": 5,
+      "p50_ms": 1154.91,
+      "p95_ms": 1383.13,
+      "max_ms": 1416.33,
+      "http_errors": 0,
+      "wall_seconds_including_version_reads": 11.29
+    }
+  ]
+}

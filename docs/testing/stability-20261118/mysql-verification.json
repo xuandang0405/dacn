@@ -1,0 +1,14 @@
+{
+  "started_utc": "2026-11-18T02:34:19.403517+00:00",
+  "finished_utc": "2026-11-18T02:34:54.205327+00:00",
+  "database": "InnoDB",
+  "fresh_migration": "0001–0006",
+  "tests": 134,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "api_fixtures": "real relational database",
+  "seed_fixture": "separate ephemeral SQLite",
+  "live_gemini": false,
+  "command": "python tests/run_verification.py"
+}

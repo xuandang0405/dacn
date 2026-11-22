@@ -1,0 +1,69 @@
+{
+  "date": "2026-11-21",
+  "environment": "Docker Compose smart-task-manager, Next.js, FastAPI, MySQL 8.4, seed.py",
+  "mock_network": false,
+  "checks": {
+    "wrong_password": 401,
+    "member_cannot_create_skill": 403,
+    "task_create": 201,
+    "same_key_replayed": true,
+    "different_body_conflict": 409,
+    "realtime_assignment": true,
+    "owner_board_updates_without_reload": true,
+    "persisted_actual_hours": 5,
+    "ai_without_document": 409,
+    "gemini_query": 200,
+    "gemini_plan": 200,
+    "gemini_draft_tasks": 3,
+    "gemini_confirm": 201,
+    "gemini_saved_tasks": 3,
+    "compose_project": "smart-task-manager",
+    "compose_startup": "passed"
+  },
+  "accounts": [
+    {
+      "email": "owner@demo.example.com",
+      "role": "OWNER",
+      "login": 200,
+      "project_tasks": 200
+    },
+    {
+      "email": "admin@demo.example.com",
+      "role": "ADMIN",
+      "login": 200,
+      "project_tasks": 200
+    },
+    {
+      "email": "lan@demo.example.com",
+      "role": "MEMBER",
+      "login": 200,
+      "project_tasks": 200
+    },
+    {
+      "email": "long@demo.example.com",
+      "role": "MEMBER",
+      "login": 200,
+      "project_tasks": 200
+    },
+    {
+      "email": "mai@demo.example.com",
+      "role": "MEMBER",
+      "login": 200,
+      "project_tasks": 200
+    }
+  ],
+  "screenshots": [
+    "01-dang-nhap",
+    "02-tong-quan",
+    "03-kanban",
+    "04-viec-duoc-giao",
+    "05-chi-tiet",
+    "06-phan-tich",
+    "07-tai-lieu-ai",
+    "08-cau-tra-loi-ai",
+    "09-duyet-ke-hoach",
+    "11-ai-da-luu",
+    "10-di-dong",
+    "12-viec-hoan-thanh"
+  ]
+}

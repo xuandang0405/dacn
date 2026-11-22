@@ -31,7 +31,7 @@ def main():
     subprocess.run([sys.executable,'-m','alembic','upgrade','head'],env=env,check=True)
     result=subprocess.run([sys.executable,'-m','pytest','-q','tests','--junitxml='+str(output/'integration-tests.xml')],env=env)
     junit=ET.parse(output/'integration-tests.xml');cases=junit.findall('.//testcase')
-    summary={'started_utc':started,'finished_utc':datetime.now(timezone.utc).isoformat(),'database':'InnoDB','fresh_migration':'0001–0005','tests':len(cases),'failed':len(junit.findall('.//failure')),'errors':len(junit.findall('.//error')),'skipped':len(junit.findall('.//skipped')),'api_fixtures':'real relational database','seed_fixture':'separate ephemeral SQLite','live_gemini':False,'command':'python tests/run_verification.py'}
+    summary={'started_utc':started,'finished_utc':datetime.now(timezone.utc).isoformat(),'database':'InnoDB','fresh_migration':'0001–0006','tests':len(cases),'failed':len(junit.findall('.//failure')),'errors':len(junit.findall('.//error')),'skipped':len(junit.findall('.//skipped')),'api_fixtures':'real relational database','seed_fixture':'separate ephemeral SQLite','live_gemini':False,'command':'python tests/run_verification.py'}
     (output/'verification-summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding='utf-8')
     if result.returncode:raise SystemExit(result.returncode)
     if not args.skip_load:subprocess.run([sys.executable,'tests/run_innodb_evidence.py'],env=env,check=True)
