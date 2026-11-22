@@ -82,7 +82,11 @@ test("lost creation response survives reload; assigned subtasks and dashboard st
         .click();
     await nav("Bảng công việc");
     const title = `Lost response ${stamp}`;
-    await page.locator(".task-create-form input").fill(title);
+    const fillTaskDraft = async () => {
+      await page.getByLabel("Công việc mới", { exact: true }).fill(title);
+      await page.getByLabel("Dự kiến (giờ)", { exact: true }).fill("3.5");
+    };
+    await fillTaskDraft();
     let key = "";
     await page.route(
       `**/api/v1/projects/${project.id}/tasks`,
@@ -99,7 +103,7 @@ test("lost creation response survives reload; assigned subtasks and dashboard st
     await page.unroute(`**/api/v1/projects/${project.id}/tasks`);
     await page.reload();
     await nav("Bảng công việc");
-    await page.locator(".task-create-form input").fill(title);
+    await fillTaskDraft();
     const replay = page.waitForResponse(
       (r) =>
         r.request().method() === "POST" &&
@@ -111,6 +115,7 @@ test("lost creation response survives reload; assigned subtasks and dashboard st
     expect(result.headers()["idempotency-replayed"]).toBe("true");
     expect(result.request().headers()["idempotency-key"]).toBe(key);
     const task = await result.json();
+    expect(task.estimated_hours).toBe(3.5);
     const tasks = await (
       await request.get(
         `${api}/api/v1/projects/${project.id}/tasks?q=${encodeURIComponent(title)}`,
