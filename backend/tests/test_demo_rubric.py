@@ -16,6 +16,20 @@ ORIGIN = {
 }
 
 
+def test_socket_io_polling_has_one_cors_header_and_checks_origin(client):
+    path = "/api/v1/socket.io/?EIO=4&transport=polling"
+    origin = ORIGIN["Origin"]
+    response = client.get(path, headers={"Origin": origin})
+    assert response.status_code == 200
+    assert response.text.startswith("0{")
+    assert response.headers.get_list("access-control-allow-origin") == [origin]
+    assert response.headers.get_list("access-control-allow-credentials") == ["true"]
+    sid = json.loads(response.text[1:])["sid"]
+    closed = client.post(f"{path}&sid={sid}", headers={"Origin": origin}, content="1")
+    assert closed.status_code == 200
+    assert client.get(path, headers={"Origin": "https://untrusted.example"}).status_code == 400
+
+
 def open_project_socket(socket, headers, project_id):
     assert socket.receive_text().startswith("0")
     auth = {"token": headers["Authorization"][7:], "project_id": project_id}

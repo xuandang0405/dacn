@@ -18,7 +18,7 @@ from app.core import settings
 from app.db import SessionLocal
 from app.realtime import hub
 from app.rate_limit import SensitiveRateLimit
-from app.socket_io import socket_app
+from app.socket_io import SOCKET_PATH, socket_app
 from app.security import project_access, user_from_token
 
 logging.basicConfig(
@@ -30,9 +30,21 @@ app = FastAPI(
     version="1.0.0",
     description="Workspace, project, task and AI planning API",
 )
+
+
+class RestCORSMiddleware(CORSMiddleware):
+    async def __call__(self, scope, receive, send):
+        path = scope.get("path", "")
+        if path == SOCKET_PATH or path.startswith(SOCKET_PATH + "/"):
+            # Engine.IO xác thực Origin và trả các header CORS của tuyến Socket.IO.
+            await self.app(scope, receive, send)
+            return
+        await super().__call__(scope, receive, send)
+
+
 app.add_middleware(SensitiveRateLimit)
 app.add_middleware(
-    CORSMiddleware,
+    RestCORSMiddleware,
     allow_origins=[settings.frontend_origin],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
@@ -71,7 +83,7 @@ for router in (
     app.include_router(router, prefix="/api/v1")
 
 
-app.mount("/api/v1/socket.io", socket_app)
+app.mount(SOCKET_PATH, socket_app)
 
 
 @app.get("/health", summary="Database health")

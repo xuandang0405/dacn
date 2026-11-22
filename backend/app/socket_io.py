@@ -7,6 +7,8 @@ from app.db import SessionLocal
 from app.realtime import hub
 from app.security import project_access, user_from_token
 
+SOCKET_PATH = "/api/v1/socket.io"
+
 # Dùng chung Hub để giữ nguyên các sự kiện và kiểm tra quyền trước mỗi lần gửi.
 server = socketio.AsyncServer(
     async_mode="asgi",
