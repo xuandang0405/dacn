@@ -18,6 +18,7 @@ from app.core import settings
 from app.db import SessionLocal
 from app.realtime import hub
 from app.rate_limit import SensitiveRateLimit
+from app.socket_io import socket_app
 from app.security import project_access, user_from_token
 
 logging.basicConfig(
@@ -68,6 +69,9 @@ for router in (
     invitations.router,
 ):
     app.include_router(router, prefix="/api/v1")
+
+
+app.mount("/api/v1/socket.io", socket_app)
 
 
 @app.get("/health", summary="Database health")

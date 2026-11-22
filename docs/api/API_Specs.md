@@ -2,6 +2,12 @@
 
 Base URL: http://localhost:8000. Swagger: /docs. OpenAPI 3.1: openapi.generated.json.
 
+## Luồng demo
+
+- `GET /api/v1/tasks/{task_id}/assignment-advice` dành cho OWNER/ADMIN có quyền vào dự án. Trả `null` khi người nhận chưa vượt năng lực trong kỳ 7 ngày. Khi quá tải, trả số giờ đã giao, sức chứa, tỷ lệ, phiên bản task và người thay thế nếu có.
+- Gợi ý chỉ xét thành viên có quyền truy cập dự án, đủ kỹ năng yêu cầu và đủ giờ cho phần việc được chuyển. Chuyển người dùng `PATCH /api/v1/tasks/{task_id}` với phiên bản hiện tại để phát hiện xung đột.
+- Socket.IO tại `/api/v1/socket.io/` dùng trường `token` trong dữ liệu xác thực. Truyền thêm `project_id` để theo dõi dự án. Bỏ trường đó để nhận thông báo cá nhân. Client lắng nghe sự kiện `change`. Giao diện dùng WebSocket khi nâng cấp thành công và hỗ trợ HTTP long-polling qua cùng đường dẫn.
+
 ## Cập nhật ổn định ngày 18/11/2026
 
 - `POST /projects/{project_id}/tasks` nhận header `Idempotency-Key` (8–128 ký tự ASCII chữ/số và `._:-`). Cùng user/Project/key và payload đã chuẩn hóa trả lại kết quả 201 ban đầu trong 24 giờ. Cùng key nhưng khác nội dung trả 409. Header `Idempotency-Replayed` cho biết kết quả phát lại. Key được lưu trong MySQL cùng giao dịch task/snapshot/activity/notification. Header còn tùy chọn để tương thích client cũ; frontend hiện tự gửi và giữ key khi retry/refresh/reload cùng tab. Không có key thì API giữ hành vi cũ.
@@ -20,7 +26,7 @@ Cập nhật trợ lý AI ngày 05/11/2026: query trả context_id để hỏi t
 - Refresh/logout dùng cookie HttpOnly và Origin http://localhost:3000.
 - 204 không có body. Lỗi nghiệp vụ có {"detail":"..."}; lỗi schema 422 có mảng detail.
 - OpenAPI tự sinh chưa khai báo mọi HTTPException; kiểm tra router khi cần danh sách lỗi đầy đủ.
-- WebSocket /ws/projects/{project_id} và /ws/notifications: token trong message đầu, Origin hợp lệ, đóng 1008 nếu không có quyền.
+- Kênh tương thích WebSocket /ws/projects/{project_id} và /ws/notifications: token trong message đầu, Origin hợp lệ, đóng 1008 nếu không có quyền.
 
 ## Payload cốt lõi
 

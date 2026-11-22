@@ -981,6 +981,27 @@ label {
 .task-create-form .task-title-field {
   flex: 1;
 }
+.task-create-form .task-hours-field {
+  flex-basis: 115px;
+}
+.assignment-warning {
+  padding: 12px;
+  border: 1px solid #f0b860;
+  border-radius: 8px;
+  background: #fff7e8;
+  color: #713f12;
+}
+.assignment-warning strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.assignment-warning p {
+  margin: 6px 0 10px;
+}
+.assignment-warning button + button {
+  margin-left: 8px;
+}
 .task-create-form label input,
 .task-create-form label select {
   width: 100%;

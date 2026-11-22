@@ -19,11 +19,11 @@ import {
   api,
   base,
   getSessionVersion,
-  getToken,
   logout,
   refresh,
   SESSION_EVENT,
 } from "@/lib/api";
+import { listenForChanges } from "@/lib/realtime";
 import type { Member, Project, User, Workspace } from "@/lib/types";
 import InvitationInbox from "./InvitationInbox";
 import Brand, { BrandSlogan } from "./Brand";
@@ -188,17 +188,8 @@ export default function App() {
   }, [user]);
   useEffect(() => {
     if (!user) return;
-    let ketNoi: WebSocket | undefined;
-    let daDong = false;
-    const ketNoiThongBao = () => {
-      const maTruyCap = getToken();
-      if (!maTruyCap || daDong) return;
-      ketNoi = new WebSocket(
-        `${base.replace(/^http/, "ws")}/api/v1/ws/notifications`,
-      );
-      ketNoi.onopen = () => ketNoi?.send(maTruyCap);
-      ketNoi.onmessage = (e) => {
-        const thongBao = JSON.parse(e.data);
+    return listenForChanges({
+      onChange: (thongBao) => {
         if (
           thongBao.event === "task.changed" ||
           thongBao.event === "connected" ||
@@ -220,16 +211,10 @@ export default function App() {
             .then((data) => setUnread(data.count))
             .catch(() => {});
         }
-      };
-      ketNoi.onclose = () => {
-        if (!daDong) setTimeout(ketNoiThongBao, 2500);
-      };
-    };
-    ketNoiThongBao();
-    return () => {
-      daDong = true;
-      ketNoi?.close();
-    };
+      },
+      checkAccess: () =>
+        api.get<User>("/auth/me").then(() => true).catch(() => false),
+    });
   }, [user, taiThongTinTaiKhoan, workspace?.id]);
   async function taoNhom(e: React.FormEvent) {
     e.preventDefault();

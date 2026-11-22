@@ -117,7 +117,8 @@ def latest_context(db, project_id, user_id, fingerprint, language):
     return {"context_id": None, "turns": []}
 
 
-def team_data(db: Session, project: Project):
+def team_data(db: Session, project: Project, start: date | None = None):
+    start = start or date.today()
     cau_truy_van = (
         select(WorkspaceMember, User)
         .join(User, User.id == WorkspaceMember.user_id)
@@ -150,7 +151,7 @@ def team_data(db: Session, project: Project):
 
     tai_theo_nguoi = {}
     for tai in workload(
-        db, project.workspace_id, date.today(), date.today() + timedelta(days=6)
+        db, project.workspace_id, start, start + timedelta(days=6)
     ):
         tai_theo_nguoi[tai["user_id"]] = tai
 

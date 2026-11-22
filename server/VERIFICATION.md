@@ -1,5 +1,19 @@
 # Kiểm tra gói triển khai Windows/Docker
 
+## Kiểm thử kịch bản demo ngày 23/11/2026
+
+Bản cập nhật được build và chạy bằng Docker Compose trên môi trường kiểm thử riêng với MySQL 8.4, migration 0006 và gateway Nginx.
+
+| Bước | Kết quả thực tế |
+|---|---|
+| Tải tài liệu và duyệt kế hoạch | Gemini trả bản nháp từ tài liệu thử. PM sửa tên, giữ người nhận được đề xuất qua Ma trận kỹ năng, xác nhận và đọc lại đúng hai task đã ghi vào MySQL. |
+| Kéo thả Kanban trên hai trình duyệt | MEMBER kéo thẻ vào Hoàn thành. Phiên PM nhận sự kiện Socket.IO qua WebSocket và hiện thẻ ở cột mới. Khi chặn WebSocket trong trình duyệt, kết nối dự phòng HTTP long-polling vẫn cập nhật bảng. |
+| Vượt năng lực và chuyển người | Tải tăng từ 8/8 lên 10/8 giờ, giao diện hiện 125% và đề xuất người còn đủ sức chứa. Sau khi PM xác nhận, API đọc lại đúng người nhận mới. |
+| Đối chiếu MAPE | Task đã hoàn thành có dự kiến 4 giờ và thực tế 5 giờ. API và giao diện đều hiện MAPE 20%. |
+| Hồi quy | 136 kiểm thử backend đạt trong đợt chạy MySQL 8.4. 9 kiểm thử frontend, lint và production build đều đạt. |
+
+Bản cập nhật này cần được cài lên máy chủ đích trước khi kiểm thử lại qua tên miền HTTPS. Khóa Gemini được cấu hình trong môi trường chạy thử và nằm ngoài ZIP.
+
 ## Cập nhật source ngày 18/11/2026
 
 Source hiện có migration 0006, key chống tạo task trùng, version việc con, giờ/tuần và các sửa lỗi giao việc/thống kê. 134 ca backend trên MySQL đạt, gồm một lượt chạy trong image backend Python 3.12 với source hiện tại mount vào /code. Frontend production build và kiểm thử browser API/MySQL local đạt; Gemini thật qua API local đã lập kế hoạch và lưu 4 task. Đã thử nâng DB có dữ liệu 0005 lên 0006. Không kiểm tra server bên ngoài, HTTPS công khai hoặc build/chạy lại toàn bộ gói Compose trong đợt 18/11. Chi tiết ở docs/SUA_LOI_ON_DINH_20261118.md trong repository.
@@ -35,7 +49,7 @@ Các dữ liệu thử đều là dữ liệu tổng hợp. Không lấy databas
 - Có thể chạy frontend/tests/e2e/assignment.spec.ts trên máy kiểm thử đã có Node/Playwright; đặt E2E_UI_URL và E2E_API_URL cùng origin public, dùng tên miền/IP truy cập thật.
 - Dừng/chạy lại để đối chiếu dữ liệu đã tạo; không dùng down -v.
 
-## Giới hạn
+## Giới hạn của đợt kiểm tra ngày 06/11
 
 - Chưa kiểm tra trên Windows Server đích vì chưa có thông tin engine/phiên bản máy đó. Docker Engine phải chạy Linux containers; không phải chỉ cài Docker là mọi engine Windows đều chạy được các image này.
 - Không kiểm tra public DNS, Windows Firewall, cổng của nhà cung cấp, IIS/TLS hoặc HTTPS Internet của server đích.

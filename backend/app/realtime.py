@@ -1,7 +1,7 @@
 import asyncio
 from collections import defaultdict
 from datetime import datetime, timezone
-from fastapi import WebSocket
+from typing import Protocol
 from fastapi import HTTPException
 from app.db import SessionLocal
 from app.models import User, WorkspaceMember
@@ -10,13 +10,18 @@ from app.security import project_access
 from starlette.concurrency import run_in_threadpool
 
 
+class RealtimeConnection(Protocol):
+    async def send_json(self, data: dict): ...
+    async def close(self, code: int): ...
+
+
 class Hub:
     # Mỗi dự án/người dùng giữ danh sách kết nối của riêng mình trong tiến trình.
     def __init__(self):
-        self.clients: dict[int, dict[WebSocket, int]] = defaultdict(dict)
-        self.user_clients: dict[int, set[WebSocket]] = defaultdict(set)
+        self.clients: dict[int, dict[RealtimeConnection, int]] = defaultdict(dict)
+        self.user_clients: dict[int, set[RealtimeConnection]] = defaultdict(set)
         self.lock = asyncio.Lock()
-        self.versions: dict[WebSocket, int] = {}
+        self.versions: dict[RealtimeConnection, int] = {}
 
     def authorized(
         self, user_id: int, version: int | None, project_id: int | None = None
@@ -38,13 +43,13 @@ class Hub:
             return True
 
     async def join(
-        self, project_id: int, ws: WebSocket, user_id: int, token_version: int = 0
+        self, project_id: int, ws: RealtimeConnection, user_id: int, token_version: int = 0
     ):
         async with self.lock:
             self.clients[project_id][ws] = user_id
             self.versions[ws] = token_version
 
-    async def leave(self, project_id: int, ws: WebSocket):
+    async def leave(self, project_id: int, ws: RealtimeConnection):
         async with self.lock:
             ket_noi_hien_tai = self.clients.get(project_id)
             if ket_noi_hien_tai is not None:
@@ -53,12 +58,12 @@ class Hub:
                     self.clients.pop(project_id, None)
             self.versions.pop(ws, None)
 
-    async def join_user(self, user_id: int, ws: WebSocket, token_version: int = 0):
+    async def join_user(self, user_id: int, ws: RealtimeConnection, token_version: int = 0):
         async with self.lock:
             self.user_clients[user_id].add(ws)
             self.versions[ws] = token_version
 
-    async def leave_user(self, user_id: int, ws: WebSocket):
+    async def leave_user(self, user_id: int, ws: RealtimeConnection):
         async with self.lock:
             ket_noi_hien_tai = self.user_clients.get(user_id)
             if ket_noi_hien_tai is not None:

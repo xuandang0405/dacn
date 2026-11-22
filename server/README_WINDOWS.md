@@ -81,7 +81,8 @@ Nếu đã có reverse proxy kết thúc TLS:
 
 - Proxy `https://tasks.example.com` đến `http://127.0.0.1:8080` trên host chạy gateway; bật chuyển tiếp WebSocket.
 - Đặt PUBLIC_URL=https://tasks.example.com và PUBLIC_SCHEME=https trong `.env.server`. Nếu proxy cùng host, có thể đặt HTTP_BIND=127.0.0.1 để cổng nội bộ không mở ra ngoài.
-- Giữ nguyên Host và Origin của trình duyệt khi chuyển tiếp. Refresh cookie dùng Secure khi PUBLIC_URL bắt đầu bằng https.
+- Giữ nguyên Host và Origin của trình duyệt khi chuyển tiếp. Với tên miền https://dacn.bkpvp.top, đặt PUBLIC_URL=https://dacn.bkpvp.top kể cả khi reverse proxy gọi gateway nội bộ qua cổng 3100. Refresh cookie dùng Secure khi PUBLIC_URL bắt đầu bằng https.
+- Chuyển tiếp cả GET, POST và WebSocket trên đường dẫn `/api/v1/socket.io/`. Tắt cache cho đường dẫn này ở dịch vụ proxy/CDN. Socket.IO có thể giữ đồng bộ bằng HTTP long-polling nếu nâng cấp WebSocket thất bại.
 - Chạy lại start-server.bat để áp dụng cấu hình. Frontend dùng đường dẫn cùng origin nên không cần nhập IP vào source hoặc build URL API riêng.
 
 Backend kiểm tra Origin chính xác; chọn một địa chỉ truy cập chính. Mở bằng cả IP và domain khác nhau sẽ không cùng hợp lệ cho refresh/WebSocket. Khi có nhiều proxy phía trước, cần cấu hình IP client tin cậy theo topology thực tế; mặc định gateway loại bỏ X-Forwarded-For do client tự gửi để không cho giả mạo IP. Rate limiter có thể coi những người dùng đi qua cùng proxy ngoài là chung một IP nếu chưa thiết lập phần này.
@@ -102,7 +103,13 @@ stop-server.bat giữ dữ liệu. Không dùng `down -v`, không xóa volume my
 - AI lỗi quota/model/key: kiểm tra cấu hình tài khoản nhà cung cấp; không giải quyết bằng cách gửi liên tục. Model phải hỗ trợ generateContent.
 - Sau khi đổi `.env.server`, chạy lại start-server.bat. Chỉ restart container không nạp biến môi trường mới.
 - Upload bị từ chối: backend vẫn giữ tối đa 3 tệp/dự án, 8 MB/tệp; gateway cho phép phần multipart lớn hơn một chút.
-- Không nhận realtime: kiểm tra PUBLIC_URL, Origin và hỗ trợ WebSocket của proxy ngoài. Không tăng số backend worker hoặc scale backend: Hub hiện ở RAM, chưa có Redis/broker.
+- Không nhận realtime: kiểm tra PUBLIC_URL và Origin ở proxy ngoài. Từ Windows chạy `curl.exe "https://dacn.bkpvp.top/api/v1/socket.io/?EIO=4&transport=polling"`. Phản hồi phải bắt đầu bằng `0{` và có trường `sid`. Sau đó mở Kanban bằng hai tài khoản cùng dự án, kéo thẻ ở một màn hình và kiểm tra màn hình còn lại. Giữ một backend worker vì Hub lưu kết nối trong RAM.
+
+### Cập nhật bản đang chạy
+
+- Chép đè các tệp source từ gói mới vào chính thư mục đang chạy, giữ nguyên `.env.server`, tên dự án Compose và cấu hình mạng.
+- Kiểm tra PUBLIC_URL, PUBLIC_SCHEME và HTTP_PORT, rồi chạy lại `start-server.bat` để build và tạo lại các container cần thiết.
+- Giữ các volume MySQL và tài liệu. Không chạy `docker compose down -v` trên hệ thống đang sử dụng.
 - Docker tự khởi động container bằng restart=unless-stopped khi engine chạy lại. Cần cấu hình engine/máy ảo Linux khởi động cùng Windows nếu yêu cầu tự phục hồi sau reboot.
 
 ## 6. Nâng cấp và giữ dữ liệu

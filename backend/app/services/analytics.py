@@ -28,6 +28,14 @@ def mape(pairs: list[tuple[float, float]]) -> float | None:
     return round(sum(cac_sai_so) / len(cac_sai_so), 2)
 
 
+def has_remaining_subtask_hours(subtask: Subtask, end: date) -> bool:
+    return not subtask.done and (subtask.due_date is None or subtask.due_date <= end)
+
+
+def parent_task_hours(task: Task, subtasks: list[Subtask]) -> float:
+    return max(0.0, float(task.estimated_hours) - sum(float(row.estimated_hours) for row in subtasks))
+
+
 def workload(db: Session, workspace_id: int, start: date, end: date):
     if end < start or (end - start).days > 365:
         raise ValueError("Invalid date interval")
@@ -80,17 +88,12 @@ def workload(db: Session, workspace_id: int, start: date, end: date):
             continue
         # Việc quá hạn nhưng chưa hoàn thành vẫn là khối lượng còn phải làm.
         danh_sach_viec_con = viec_con_theo_task.get(task.id, [])
-        tong_gio_viec_con = 0
-        for viec_con in danh_sach_viec_con:
-            tong_gio_viec_con += float(viec_con.estimated_hours)
-        gio_con_lai_cua_cha = max(0.0, float(task.estimated_hours) - tong_gio_viec_con)
+        gio_con_lai_cua_cha = parent_task_hours(task, danh_sach_viec_con)
         if task.assignee_id in ket_qua:
             ket_qua[task.assignee_id]["assigned_hours"] += gio_con_lai_cua_cha
             task_theo_nguoi[task.assignee_id].add(task.id)
         for viec_con in danh_sach_viec_con:
-            if viec_con.done:
-                continue
-            if viec_con.due_date and viec_con.due_date > end:
+            if not has_remaining_subtask_hours(viec_con, end):
                 continue
             nguoi_nhan = viec_con.assignee_id or task.assignee_id
             if nguoi_nhan in ket_qua:

@@ -26,6 +26,7 @@ from app.services.task_transactions import (
 
 from starlette.concurrency import run_in_threadpool
 from app.services import task_workflow
+from app.services.assignment_advice import AssignmentAdvice, assignment_advice
 from app.services.task_workflow import task_access, event_activity
 
 router = APIRouter(tags=["Tasks"])
@@ -134,6 +135,19 @@ def required_skills(
     task_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)
 ):
     return task_workflow.required_skills(task_id, user, db)
+
+
+@router.get(
+    "/tasks/{task_id}/assignment-advice",
+    response_model=AssignmentAdvice | None,
+    summary="Get overload warning and a qualified replacement for a task",
+)
+def get_assignment_advice(
+    task_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)
+):
+    task, project = task_access(db, task_id, user)
+    project_access(db, project.id, user, manage=True)
+    return assignment_advice(db, task, project)
 
 
 @router.patch(

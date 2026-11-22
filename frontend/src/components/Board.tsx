@@ -1,7 +1,9 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CalendarDays, Clock3, Plus, Settings2, X } from "lucide-react";
-import { api, ApiError, base, getToken, createTask } from "@/lib/api";
+import { api, ApiError, createTask } from "@/lib/api";
+import { listenForChanges } from "@/lib/realtime";
+import AssignmentWarning from "./AssignmentWarning";
 import { enumLabel, useLanguage } from "@/lib/language";
 import { formatTimestamp } from "@/lib/dates";
 import type {
@@ -65,6 +67,8 @@ export default function Board({
   const [congViecDangChon, chonCongViec] = useState<Task | null>(null);
   const [tenCongViecMoi, datTenCongViecMoi] = useState("");
   const [nguoiNhanMoi, datNguoiNhanMoi] = useState(0);
+  const [gioDuKienMoi, datGioDuKienMoi] = useState("");
+  const [congViecVuaTao, datCongViecVuaTao] = useState<Task | null>(null);
   const [tenCotMoi, datTenCotMoi] = useState("");
   const [tuKhoa, datTuKhoa] = useState("");
   const [locUuTien, datLocUuTien] = useState("");
@@ -162,42 +166,32 @@ export default function Board({
       datNguoiNhanMoi(0);
   }, [nguoiNhanMoi, thanhVienCoQuyen]);
   useEffect(() => {
-    let ketNoi: WebSocket | undefined;
     let daDong = false;
-    const ketNoiLai = () => {
-      const maDangNhap = getToken();
-      if (!maDangNhap || daDong) return;
-      ketNoi = new WebSocket(
-        `${base.replace(/^http/, "ws")}/api/v1/ws/projects/${project.id}`,
-      );
-      ketNoi.onopen = () => ketNoi?.send(maDangNhap);
-      ketNoi.onmessage = (suKien) => {
-        const thongDiep = JSON.parse(suKien.data);
-        if (thongDiep.event !== "connected") {
-          tangLanLamMoi((value) => value + 1);
-          taiDuLieu(false);
-        }
-      };
-      ketNoi.onclose = async () => {
-        if (daDong) return;
+    const dongKetNoi = listenForChanges({
+      projectId: project.id,
+      onChange: () => {
+        tangLanLamMoi((value) => value + 1);
+        taiDuLieu(false);
+      },
+      checkAccess: async () => {
         try {
           await api.get<Project>(`/projects/${project.id}`);
+          return true;
         } catch (loi) {
           if (
+            !daDong &&
             loi instanceof ApiError &&
             (loi.status === 403 || loi.status === 404)
           ) {
-            if (!daDong) khiMatQuyenDuAn.current();
-            return;
+            khiMatQuyenDuAn.current();
           }
+          return false;
         }
-        if (!daDong) setTimeout(ketNoiLai, 2500);
-      };
-    };
-    ketNoiLai();
+      },
+    });
     return () => {
       daDong = true;
-      ketNoi?.close();
+      dongKetNoi();
     };
   }, [project.id, taiDuLieu]);
   async function taoCongViec(suKien: React.FormEvent) {
@@ -210,19 +204,21 @@ export default function Board({
     datLoiHienThi("");
     datDangXuLy(true);
     try {
-      await createTask(
+      const daTao = await createTask<Task>(
         project.id,
         {
           title: tenCongViecMoi.trim(),
           description: "",
           priority: "MEDIUM",
-          estimated_hours: 0,
+          estimated_hours: Number(gioDuKienMoi),
           actual_hours: 0,
           assignee_id: nguoiNhanMoi || null,
         },
         actorId,
       );
       datTenCongViecMoi("");
+      datGioDuKienMoi("");
+      datCongViecVuaTao(daTao.assignee_id ? daTao : null);
       await taiDuLieu();
     } catch (loi) {
       datLoiHienThi((loi as Error).message);
@@ -538,6 +534,19 @@ export default function Board({
               ))}
             </select>
           </label>
+          <label className="task-hours-field">
+            {tr("Dự kiến (giờ)", "Estimated hours")}
+            <input
+              type="number"
+              min={0}
+              max={99999}
+              step="0.01"
+              placeholder="0"
+              value={gioDuKienMoi}
+              disabled={dangXuLy}
+              onChange={(event) => datGioDuKienMoi(event.target.value)}
+            />
+          </label>
           <button type="submit" className="button primary" disabled={dangXuLy}>
             <Plus size={16} />{" "}
             {dangXuLy
@@ -546,6 +555,15 @@ export default function Board({
           </button>
         </form>
       </div>
+      {coQuyenQuanLy && !congViecDangChon && congViecVuaTao?.project_id === project.id && (
+        <AssignmentWarning
+          key={congViecVuaTao.id}
+          task={congViecVuaTao}
+          disabled={dangXuLy}
+          onChanged={taiDuLieu}
+          onDismiss={() => datCongViecVuaTao(null)}
+        />
+      )}
       <div className="board-filters">
         <input
           aria-label={tr("Tìm công việc", "Search tasks")}
@@ -738,6 +756,7 @@ export default function Board({
           columns={danhSachCot}
           members={thanhVienCoQuyen}
           refreshKey={lanLamMoi}
+          canManage={coQuyenQuanLy}
           onClose={() => chonCongViec(null)}
           onChanged={taiDuLieu}
         />
@@ -752,6 +771,7 @@ function TaskPanel({
   columns,
   members,
   refreshKey,
+  canManage,
   onClose,
   onChanged,
 }: {
@@ -760,6 +780,7 @@ function TaskPanel({
   columns: Column[];
   members: Member[];
   refreshKey: number;
+  canManage: boolean;
   onClose: () => void;
   onChanged: () => Promise<void>;
 }) {
@@ -784,6 +805,7 @@ function TaskPanel({
   const [phienBanDangSua, datPhienBanDangSua] = useState(task.version);
   const [coXungDot, datCoXungDot] = useState(false);
   const [daLuu, datDaLuu] = useState(false);
+  const [congViecVuaGiao, datCongViecVuaGiao] = useState<Task | null>(null);
   const hopChiTiet = useRef<HTMLDialogElement>(null);
   function dongChiTiet() {
     if (dangXuLy) return;
@@ -844,7 +866,7 @@ function TaskPanel({
     datCoXungDot(false);
     datDangXuLy(true);
     try {
-      await api.patch(`/tasks/${task.id}`, {
+      const daCapNhat = await api.patch<Task>(`/tasks/${task.id}`, {
         title: tenCongViec,
         description: moTa,
         priority: uuTien,
@@ -854,6 +876,7 @@ function TaskPanel({
         due_date: hanHoanThanh || null,
         version: phienBanDangSua,
       });
+      datCongViecVuaGiao(daCapNhat.assignee_id ? daCapNhat : null);
       await onChanged();
       datCoThayDoiChuaLuu(false);
       datDaLuu(true);
@@ -1008,6 +1031,15 @@ function TaskPanel({
           <div className="error" role="alert">
             {messageText(loiHienThi)}
           </div>
+        )}
+        {canManage && congViecVuaGiao && (
+          <AssignmentWarning
+            key={congViecVuaGiao.version}
+            task={congViecVuaGiao}
+            disabled={dangXuLy || coThayDoiChuaLuu}
+            onChanged={onChanged}
+            onDismiss={() => datCongViecVuaGiao(null)}
+          />
         )}
         {daLuu && !coThayDoiChuaLuu && (
           <div className="success" role="status">

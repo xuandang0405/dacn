@@ -6,8 +6,9 @@
 
 - Đăng nhập, làm mới phiên, quản lý workspace, lời mời và quyền truy cập dự án.
 - Tạo việc, giao người thực hiện, thêm việc con, ghi giờ và chuyển trạng thái trên Kanban.
-- Bình luận, nhắc tên, nhận thông báo và đồng bộ thay đổi qua WebSocket.
+- Bình luận, nhắc tên, nhận thông báo và đồng bộ thay đổi qua Socket.IO.
 - Theo dõi kỹ năng, năng lực theo tuần, tải công việc, tiến độ và sai số ước lượng MAPE.
+- Khi giao việc vượt năng lực, Kanban cảnh báo quá tải và đề xuất thành viên đủ kỹ năng, còn đủ giờ. Quản lý duyệt trước khi chuyển người.
 - Tải PDF, DOCX, TXT hoặc Markdown theo dự án, hỏi Gemini và chuyển câu trả lời thành bản nháp kế hoạch.
 - Giao diện tiếng Việt và tiếng Anh.
 
@@ -67,16 +68,15 @@ Với database đã có dữ liệu, sao lưu rồi nâng cấp bằng `python -
 
 ## Thử luồng nghiệp vụ
 
-1. Đăng nhập OWNER và MEMBER bằng hai hồ sơ trình duyệt riêng.
-2. OWNER tạo công việc và giao cho MEMBER. MEMBER mở **Công việc của tôi**, đưa việc sang **Đang thực hiện**, nhập giờ thực tế và chuyển sang **Hoàn thành**.
-3. Quan sát phiên OWNER cập nhật bảng và xem lại số liệu trong **Phân tích**.
-4. Để thử AI, điền `GEMINI_API_KEY` ở backend, tạo lại container backend, tải một tài liệu vào dự án, đặt câu hỏi rồi chọn **Lập kế hoạch** từ câu trả lời. Chỉnh người thực hiện và xác nhận, sau đó kiểm tra các việc trên Kanban.
+1. **Phân rã và duyệt.** OWNER hoặc ADMIN mở Trợ lý AI, chọn dự án, tải tài liệu và nhập mục tiêu. Nêu kỹ năng trong mục tiêu và chấm trước các kỹ năng liên quan ở Ma trận kỹ năng. Bấm **Tạo bản nháp và đề xuất người nhận**, kiểm tra từng việc, sửa nếu cần rồi **Xác nhận và giao việc**. Mở Kanban để đối chiếu việc vừa lưu.
+2. **Thử realtime.** Mở cùng bảng Kanban ở hai phiên OWNER và MEMBER. MEMBER kéo thẻ sang cột khác. OWNER quan sát thẻ đổi cột mà không tải lại trang. Tắt bộ lọc ở phiên đang thao tác để sử dụng kéo thả.
+3. **Thử quá tải và MAPE.** Trong một workspace demo riêng, cấu hình MEMBER có năng lực 8 giờ/tuần, giao một việc mở 8 giờ rồi giao thêm việc 2 giờ. Kiểm tra cảnh báo 125% và người thay thế còn đủ năng lực, sau đó xác nhận chuyển người. Ở dự án chưa có mẫu MAPE khác, đưa một việc dự kiến 4 giờ và thực tế 5 giờ vào cột Hoàn thành, rồi mở **Phân tích** để thấy MAPE 20%.
 
 Khi đổi khóa hoặc model trên Compose local, chạy `docker compose up -d --no-deps --force-recreate backend`. `GEMINI_MODEL` mặc định dùng `gemini-3.1-flash-lite`; chọn model được khóa của bạn cấp quyền. Cấu hình SMTP riêng nếu cần thử quên mật khẩu.
 
 ## Kiến trúc và kiểm thử
 
-Next.js gọi FastAPI qua REST và WebSocket. Backend kiểm tra quyền theo workspace và dự án, ghi MySQL/InnoDB và lưu tài liệu trong kho tệp riêng. Sự kiện được phát sau khi commit. Hub realtime hiện chạy trong một tiến trình backend. Client gửi `Idempotency-Key` khi tạo công việc, còn sửa công việc và việc con dùng version để phát hiện bản cập nhật cũ.
+Next.js gọi FastAPI qua REST và nhận sự kiện qua Socket.IO. Kết nối ưu tiên nâng cấp lên WebSocket và có thể duy trì qua HTTP long-polling khi proxy không hỗ trợ nâng cấp. Backend kiểm tra quyền theo workspace và dự án, ghi MySQL/InnoDB và lưu tài liệu trong kho tệp riêng. Sự kiện được phát sau khi commit. Hub realtime hiện chạy trong một tiến trình backend. Client gửi `Idempotency-Key` khi tạo công việc, còn sửa công việc và việc con dùng version để phát hiện bản cập nhật cũ.
 
 - Báo cáo Word, PDF và video demo được bàn giao cùng bộ hồ sơ của nhóm.
 - [Đặc tả API](docs/api/API_Specs.md) · [OpenAPI JSON](docs/api/openapi.generated.json) · [Postman](docs/api/postman.local.collection.json)

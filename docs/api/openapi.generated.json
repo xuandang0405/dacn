@@ -1794,6 +1794,61 @@
         }
       }
     },
+    "/api/v1/tasks/{task_id}/assignment-advice": {
+      "get": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Get overload warning and a qualified replacement for a task",
+        "operationId": "get_assignment_advice_api_v1_tasks__task_id__assignment_advice_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AssignmentAdvice"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Assignment Advice Api V1 Tasks  Task Id  Assignment Advice Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/tasks/{task_id}/move": {
       "post": {
         "tags": [
@@ -4606,6 +4661,92 @@
           "created_at"
         ],
         "title": "WorkspaceOut"
+      },
+      "AssignmentAdvice": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "assignee_name": {
+            "type": "string",
+            "title": "Assignee Name"
+          },
+          "assigned_hours": {
+            "type": "number",
+            "title": "Assigned Hours"
+          },
+          "capacity_hours": {
+            "type": "number",
+            "title": "Capacity Hours"
+          },
+          "percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentage"
+          },
+          "replacement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Replacement"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "assignee_name",
+          "assigned_hours",
+          "capacity_hours",
+          "percentage",
+          "replacement"
+        ],
+        "title": "AssignmentAdvice"
+      },
+      "Replacement": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "skill_match": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Match"
+          },
+          "projected_percentage": {
+            "type": "number",
+            "title": "Projected Percentage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "name",
+          "skill_match",
+          "projected_percentage"
+        ],
+        "title": "Replacement"
       }
     },
     "securitySchemes": {
